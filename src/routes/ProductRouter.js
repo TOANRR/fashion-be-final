@@ -7,6 +7,7 @@ router.put('/update/:id', authMiddleWare, ProductController.updateProduct)
 router.get('/get-details/:id', ProductController.getDetailsProduct)
 router.delete('/delete/:id', authMiddleWare, ProductController.deleteProduct)
 router.get('/get-all', ProductController.getAllProduct)
+router.post('/get-all-obj', ProductController.findManyByObj)
 router.post('/delete-many', authMiddleWare, ProductController.deleteMany)
 router.get('/get-all-type', ProductController.getAllType)
 module.exports = router

@@ -1,5 +1,5 @@
 const User = require("../models/UserModel")
-const {genneralAccessToken, genneralRefreshToken}  = require("./jwtService")
+const { genneralAccessToken, genneralRefreshToken } = require("./jwtService")
 const bcrypt = require("bcrypt")
 const createUser = (newUser) => {
     return new Promise(async (resolve, reject) => {
@@ -62,7 +62,7 @@ const loginUser = (userLogin) => {
                 id: checkUser.id,
                 isAdmin: checkUser.isAdmin
             })
-            console.log('access_token:',access_token)
+            console.log('access_token:', access_token)
             resolve({
                 status: 'OK',
                 message: 'SUCCESS',
@@ -86,8 +86,7 @@ const updateUser = (id, data) => {
                     message: 'The user is not defined'
                 })
             }
-            if(data.password)
-            {
+            if (data.password) {
                 const hash = bcrypt.hashSync(data.password, 10)
                 data.password = hash
             }
@@ -116,11 +115,11 @@ const deleteUser = (id) => {
                 })
             }
 
-             await User.findByIdAndDelete(id)
+            await User.findByIdAndDelete(id)
             resolve({
                 status: 'OK',
                 message: 'delete SUCCESS',
-               
+
             })
         } catch (e) {
             reject(e)
@@ -130,7 +129,7 @@ const deleteUser = (id) => {
 const getAllUser = () => {
     return new Promise(async (resolve, reject) => {
         try {
-            const allUser = await User.find().sort({createdAt: -1, updatedAt: -1})
+            const allUser = await User.find().sort({ createdAt: -1, updatedAt: -1 })
             resolve({
                 status: 'OK',
                 message: 'Success',
@@ -163,6 +162,20 @@ const getDetailsUser = (id) => {
         }
     })
 }
-module.exports= {
-    createUser,loginUser,updateUser, deleteUser, getAllUser,getDetailsUser
+const deleteManyUser = (ids) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            await User.deleteMany({ _id: ids })
+            resolve({
+                status: 'OK',
+                message: 'Delete user success',
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+module.exports = {
+    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, deleteManyUser
 }

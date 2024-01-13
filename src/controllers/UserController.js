@@ -30,7 +30,7 @@ const createUser = async (req, res) => {
     }
 }
 const loginUser = async (req, res) => {
-    
+
     try {
         const { email, password } = req.body
         const reg = /^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/
@@ -54,14 +54,14 @@ const loginUser = async (req, res) => {
             sameSite: 'strict',
             path: '/',
         })
-        return res.status(200).json({...newReponse, refresh_token})
+        return res.status(200).json({ ...newReponse, refresh_token })
     } catch (e) {
         return res.status(404).json({
             message: e
         })
     }
 }
-const updateUser = async (req,res) => {
+const updateUser = async (req, res) => {
     try {
         const userId = req.params.id
         const data = req.body
@@ -79,7 +79,7 @@ const updateUser = async (req,res) => {
         })
     }
 }
-const deleteUser = async(req,res) =>{
+const deleteUser = async (req, res) => {
     try {
         const userId = req.params.id
         if (!userId) {
@@ -125,9 +125,8 @@ const getDetailsUser = async (req, res) => {
     }
 }
 const refreshToken = async (req, res) => {
-    console.log('req.cookies', req.cookies)
     try {
-        const token = req.cookies.refresh_token
+        let token = req.headers.token.split(' ')[1]
         if (!token) {
             return res.status(200).json({
                 status: 'ERR',
@@ -155,6 +154,23 @@ const logoutUser = async (req, res) => {
         })
     }
 }
-module.exports= {
-    createUser, loginUser, updateUser, deleteUser, getAllUser,getDetailsUser, refreshToken, logoutUser
+const deleteMany = async (req, res) => {
+    try {
+        const ids = req.body.ids
+        if (!ids) {
+            return res.status(200).json({
+                status: 'ERR',
+                message: 'The ids is required'
+            })
+        }
+        const response = await UserService.deleteManyUser(ids)
+        return res.status(200).json(response)
+    } catch (e) {
+        return res.status(404).json({
+            message: e
+        })
+    }
+}
+module.exports = {
+    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany
 }

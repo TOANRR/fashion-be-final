@@ -1,5 +1,22 @@
 const ProductService = require('../services/ProductService')
 
+// const createProduct = async (req, res) => {
+//     try {
+//         const { name, image, type, countInStock, price, rating, description,di } = req.body
+//         if (!name || !image || !type || !countInStock || !price || !rating ) {
+//             return res.status(200).json({
+//                 status: 'ERR',
+//                 message: 'The input is required'
+//             })
+//         }
+//         const response = await ProductService.createProduct(req.body)
+//         return res.status(200).json(response)
+//     } catch (e) {
+//         return res.status(404).json({
+//             message: e
+//         })
+//     }
+// }
 const createProduct = async (req, res) => {
     try {
         const { name, image, type, countInStock, price, rating, description, discount } = req.body
@@ -91,10 +108,31 @@ const deleteMany = async (req, res) => {
     }
 }
 
+const findManyByObj = async (req, res) => {
+    try {
+        const ids = req.body.ids
+        const { limit } = req.query
+        const page = 0;
+
+        if (ids?.lenght < 0) {
+            return res.status(200).json({
+                status: 'ERR',
+                message: 'The ids is required'
+            })
+        }
+        const response = await ProductService.findManyByObj(limit, page, ids)
+        return res.status(200).json(response)
+    } catch (e) {
+        return res.status(404).json({
+            message: e
+        })
+    }
+}
+
 const getAllProduct = async (req, res) => {
     try {
-       const { limit, page, sort, filter } = req.query
-       const response = await ProductService.getAllProduct(Number(limit) || null, Number(page) || 0, sort, filter)
+        const { limit, page, sort, filter } = req.query
+        const response = await ProductService.getAllProduct(Number(limit) || null, Number(page) || 0, sort, filter)
         return res.status(200).json(response)
     } catch (e) {
         return res.status(404).json({
@@ -121,5 +159,6 @@ module.exports = {
     deleteProduct,
     getAllProduct,
     deleteMany,
-    getAllType
+    getAllType,
+    findManyByObj
 }

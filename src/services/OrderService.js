@@ -1,3 +1,4 @@
+const Card = require("../models/CardModel")
 const Order = require("../models/OrderModel")
 const Product = require("../models/ProductModel")
 // const EmailService = require("../services/EmailService")
@@ -34,7 +35,20 @@ const createOrder = (newOrder) => {
                     }
                 }
             })
-            const results = await Promise.all(promises)
+            const promisesDelete = orderItems.map(async (order) => {
+                await Card.deleteOne(
+                    {
+                        user: user,
+                        product: order.product
+                    }
+                )
+                return {
+                    status: 'OK',
+                    message: 'SUCCESS'
+                }
+
+            })
+            const results = await Promise.all(promises, promisesDelete)
             const newData = results && results.filter((item) => item.id)
             if (newData.length) {
                 const arrId = []
@@ -43,7 +57,7 @@ const createOrder = (newOrder) => {
                 })
                 resolve({
                     status: 'ERR',
-                    message: `San pham voi id: ${arrId.join(',')} khong du hang`
+                    message: `Sản phẩm với id: ${arrId.join(',')} không đủ hàng`
                 })
             } else {
                 const createdOrder = await Order.create({

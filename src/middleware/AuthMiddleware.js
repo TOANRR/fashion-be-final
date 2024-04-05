@@ -23,9 +23,9 @@ const authMiddleWare = (req, res, next) => {
     });
 }
 const authUserMiddleWare = (req, res, next) => {
-    console.log("token:",req.headers.token)
+    // console.log("token:",req.headers.token)
     const token = req.headers.token.split(' ')[1]
-    console.log("token:",token)
+    //  console.log("token:",token)
     const userId = req.params.id
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, user) {
         if (err) {
@@ -37,7 +37,7 @@ const authUserMiddleWare = (req, res, next) => {
         if (user?.isAdmin || user?.id === userId) {
             next()
         } else {
-            
+            console.log(user?.id, userId)
             return res.status(404).json({
                 message: 'The authemtication 2',
                 status: 'ERROR'

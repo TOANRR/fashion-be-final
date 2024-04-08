@@ -3,7 +3,7 @@ const { ObjectId } = require('mongodb');
 
 const createProduct = (newProduct) => {
     return new Promise(async (resolve, reject) => {
-        const { name, image, type, countInStock, price, rating, description, discount } = newProduct
+        const { name, images, type, category, price, description, sizes, discount } = newProduct
         try {
             const checkProduct = await Product.findOne({
                 name: name
@@ -16,11 +16,11 @@ const createProduct = (newProduct) => {
             }
             const newProduct = await Product.create({
                 name,
-                image,
+                images,
                 type,
-                countInStock: Number(countInStock),
+                category,
                 price,
-                rating,
+                sizes,
                 description,
                 discount
             })

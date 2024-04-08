@@ -8,6 +8,7 @@ const cardSchema = new mongoose.Schema(
             required: true,
         },
         quantity: { type: Number, required: true },
+        size: { type: String, required: true },
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     },
     {

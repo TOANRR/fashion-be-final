@@ -13,7 +13,7 @@ const createCard = async (req, res) => {
 }
 const deleteCard = async (req, res) => {
     try {
-
+        console.log(req.body)
         const response = await CardService.deleteCard(req.body)
         return res.status(200).json(response)
     } catch (e) {

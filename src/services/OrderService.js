@@ -5,17 +5,18 @@ const Product = require("../models/ProductModel")
 
 const createOrder = (newOrder) => {
     return new Promise(async (resolve, reject) => {
-        const { orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, phone, user, isPaid, paidAt, email } = newOrder
+        const { orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email } = newOrder
         try {
             const promises = orderItems.map(async (order) => {
                 const productData = await Product.findOneAndUpdate(
                     {
                         _id: order.product,
-                        countInStock: { $gte: order.amount }
+                        'sizes.size': order.size,
+                        'sizes.countInStock': { $gte: order.amount }
                     },
                     {
                         $inc: {
-                            countInStock: -order.amount,
+                            'sizes.$.countInStock': -order.amount,
                             selled: +order.amount
                         }
                     },
@@ -65,7 +66,7 @@ const createOrder = (newOrder) => {
                     shippingAddress: {
                         fullName,
                         address,
-                        city, phone
+                        city, phone, ward, district
                     },
                     paymentMethod,
                     itemsPrice,
@@ -161,11 +162,12 @@ const cancelOrderDetails = (id, data) => {
                 const productData = await Product.findOneAndUpdate(
                     {
                         _id: order.product,
+                        'sizes.size': order.size,
                         selled: { $gte: order.amount }
                     },
                     {
                         $inc: {
-                            countInStock: +order.amount,
+                            'sizes.$.countInStock': +order.amount,
                             selled: -order.amount
                         }
                     },

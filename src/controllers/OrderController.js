@@ -3,10 +3,10 @@ const OrderService = require('../services/OrderService')
 const createOrder = async (req, res) => {
     try {
         let shipping = false;
-        const { paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, phone } = req.body
+        const { paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone } = req.body
         // console.log(paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, phone);
         if (shippingPrice !== undefined) shipping = true;
-        if (!paymentMethod || !itemsPrice || !shipping || !totalPrice || !fullName || !address || !city || !phone) {
+        if (!paymentMethod || !itemsPrice || !shipping || !totalPrice || !fullName || !address || !city || !phone || !district || !ward) {
             return res.status(200).json({
                 status: 'ERR',
                 message: 'The input is required'

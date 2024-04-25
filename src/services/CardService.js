@@ -4,8 +4,27 @@ const Product = require("../models/ProductModel")
 
 const createCard = (newItem) => {
     return new Promise(async (resolve, reject) => {
-        const { quantity, product, user, size } = newItem
+        const { quantity, product, user, size } = newItem;
         try {
+            // Find the product
+            const productInfo = await Product.findById(product);
+            if (!productInfo) {
+                resolve({
+                    status: 'ERROR',
+                    message: 'Sản phẩm không tồn tại'
+                })
+                return
+            }
+
+            // Check if the product has the required size and enough quantity
+            const selectedSize = productInfo.sizes.find(s => s.size === size);
+            if (!selectedSize || selectedSize.countInStock < quantity) {
+                resolve({
+                    status: 'ERROR',
+                    message: 'Không đủ sản phẩm cung ứng'
+                })
+                return
+            }
             const checkItem = await Card.findOne({
                 product: product,
                 user: user,
@@ -13,20 +32,37 @@ const createCard = (newItem) => {
             })
 
             if (checkItem !== null) {
-                console.log("check", checkItem._id);
-                const updatedItem = await Card.findOneAndUpdate(
-                    { "product": product, "user": user, "size": size },
-                    { "quantity": quantity * 1 + checkItem.quantity * 1 },
-                    { new: true }
+                if ((quantity * 1 + checkItem.quantity * 1 <= selectedSize.countInStock) && (quantity * 1 + checkItem.quantity * 1) >= 1) {
+                    // console.log("check", checkItem._id);
+                    const updatedItem = await Card.findOneAndUpdate(
+                        { "product": product, "user": user, "size": size },
+                        { "quantity": quantity * 1 + checkItem.quantity * 1 },
+                        { new: true }
 
-                )
-                resolve({
-                    status: 'OK',
-                    message: 'SUCCESS',
-                    data: updatedItem
-                })
+                    )
+                    resolve({
+                        status: 'OK',
+                        message: 'SUCCESS',
+                        data: updatedItem
+                    })
+                }
+                else {
+                    resolve({
+                        status: 'ERROR',
+                        message: 'Không đủ sản phẩm cung ứng'
+                    })
+                    return
+                }
+
             }
             else {
+                if (quantity < 1) {
+                    resolve({
+                        status: 'ERROR',
+                        message: 'Không đủ sản phẩm cung ứng'
+                    })
+                    return
+                }
                 const newItem = await Card.create({
                     user,
                     product,
@@ -43,10 +79,13 @@ const createCard = (newItem) => {
                 }
             }
 
-        } catch (e) {
-            reject(e)
+
+            // Create a new item in the cart
+
+        } catch (error) {
+            reject(error);
         }
-    })
+    });
 }
 const deleteCard = (item) => {
     return new Promise(async (resolve, reject) => {
@@ -85,7 +124,7 @@ const getAllItems = (user) => {
     return new Promise(async (resolve, reject) => {
 
         try {
-            console.log(user)
+            // console.log(user)
             // const allItems = await Card.aggregate([
             //     { $match: { $expr: { $eq: ['$user', { $toObjectId: user }] } } },
             //     {
@@ -160,7 +199,7 @@ const getAllItems = (user) => {
                     }
                 },
             ])
-            console.log(allItems.length)
+            // console.log(allItems.length)
             if (allItems) {
                 resolve({
                     status: 'OK',

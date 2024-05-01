@@ -10,4 +10,10 @@ router.get('/get-all', ProductController.getAllProduct)
 router.post('/get-all-obj', ProductController.findManyByObj)
 router.post('/delete-many', authMiddleWare, ProductController.deleteMany)
 router.get('/get-all-type', ProductController.getAllType)
+router.get('/types-categories', ProductController.getTypeCategories)
+router.post('/filter-product', ProductController.filterProduct)
+router.get('/product-type/:type', ProductController.getProductByType)
+router.get('/categories', ProductController.getCategories)
+
+
 module.exports = router

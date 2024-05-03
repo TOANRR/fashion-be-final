@@ -155,6 +155,7 @@ const getAllItems = (user) => {
             // //     console.log(cards);
             // // });
             const allItems = await Card.aggregate([
+                { $match: { $expr: { $eq: ['$user', { $toObjectId: user }] } } },
                 {
                     $lookup: {
                         from: 'products',

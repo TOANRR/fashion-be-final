@@ -163,7 +163,7 @@ const getOrderDetails = (id) => {
     })
 }
 
-const cancelOrderDetails = (id, data) => {
+const deleteOrderDetails = (id, data) => {
     return new Promise(async (resolve, reject) => {
         try {
             let order = []
@@ -184,6 +184,65 @@ const cancelOrderDetails = (id, data) => {
                 )
                 if (productData) {
                     order = await Order.findByIdAndDelete(id)
+                    if (order === null) {
+                        resolve({
+                            status: 'ERR',
+                            message: 'The order is not defined'
+                        })
+                    }
+                } else {
+                    return {
+                        status: 'OK',
+                        message: 'ERR',
+                        id: order.product
+                    }
+                }
+            })
+            const results = await Promise.all(promises)
+            const newData = results && results[0] && results[0].id
+
+            if (newData) {
+                resolve({
+                    status: 'ERR',
+                    message: `San pham voi id: ${newData} khong ton tai`
+                })
+            }
+            resolve({
+                status: 'OK',
+                message: 'success',
+                data: order
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+const cancelOrderDetails = (id, data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let order = []
+            const promises = data.map(async (order) => {
+                const productData = await Product.findOneAndUpdate(
+                    {
+                        _id: order.product,
+                        'sizes.size': order.size,
+                        selled: { $gte: order.amount }
+                    },
+                    {
+                        $inc: {
+                            'sizes.$.countInStock': +order.amount,
+                            selled: -order.amount
+                        }
+                    },
+                    { new: true }
+                )
+                if (productData) {
+                    const order = await Order.findOneAndUpdate(
+                        { _id: id }, // Điều kiện tìm kiếm
+                        { isCancel: true }, // Dữ liệu cập nhật
+                        { new: true } // Tùy chọn để trả về bản ghi đã được cập nhật
+                    );
+                    console.log(order)
                     if (order === null) {
                         resolve({
                             status: 'ERR',
@@ -239,5 +298,6 @@ module.exports = {
     getAllOrderDetails,
     getOrderDetails,
     cancelOrderDetails,
-    getAllOrder
+    getAllOrder,
+    deleteOrderDetails
 }

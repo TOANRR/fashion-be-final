@@ -59,6 +59,23 @@ const getDetailsProduct = async (req, res) => {
         })
     }
 }
+const getDetailsProductAdmin = async (req, res) => {
+    try {
+        const productId = req.params.id
+        if (!productId) {
+            return res.status(200).json({
+                status: 'ERR',
+                message: 'The productId is required'
+            })
+        }
+        const response = await ProductService.getDetailsProductAdmin(productId)
+        return res.status(200).json(response)
+    } catch (e) {
+        return res.status(404).json({
+            message: e
+        })
+    }
+}
 
 const deleteProduct = async (req, res) => {
     try {
@@ -238,7 +255,7 @@ const getProductByType = async (req, res) => {
         res.status(200).json(products); // Trả về danh sách sản phẩm dưới dạng JSON
     } catch (error) {
         console.error('Error getting products by type:', error);
-        res.status(500).json({ message: 'Server error' }); // Trả về lỗi 500 nếu có vấn đề xảy ra
+        res.status(404).json({ message: 'Server error' }); // Trả về lỗi 500 nếu có vấn đề xảy ra
     }
 };
 const getCategories = async (req, res) => {
@@ -249,7 +266,7 @@ const getCategories = async (req, res) => {
         res.status(200).json(categories);
     } catch (error) {
         console.error('Error fetching unique categories:', error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(404).json({ message: 'Server Error' });
     }
 }
 
@@ -266,5 +283,7 @@ module.exports = {
     getTypeCategories,
     filterProduct,
     getProductByType,
-    getCategories
+    getCategories,
+    getDetailsProductAdmin
+
 }

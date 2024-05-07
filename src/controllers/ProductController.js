@@ -1,5 +1,6 @@
 const Product = require('../models/ProductModel')
 const ProductService = require('../services/ProductService')
+const axios = require('axios');
 
 const createProduct = async (req, res) => {
     try {
@@ -177,7 +178,7 @@ const getTypeCategories = async (req, res) => {
 
 const filterProduct = async (req, res) => {
     try {
-        console.log(req.body)
+        // console.log(req.body)
         let filters = {};
 
         // Parse and apply price range filter
@@ -269,7 +270,42 @@ const getCategories = async (req, res) => {
         res.status(404).json({ message: 'Server Error' });
     }
 }
+const searchImage = async (req, res) => {
+    try {
+        // Send POST request to Python server
 
+        const response = await axios.post('http://localhost:5000/image', {
+            query_img: req.body.query_img
+        });
+
+        // Extract IDs from the response
+        const { data } = response.data;
+
+
+        if (!data || !Array.isArray(data)) {
+            throw new Error('Invalid response format');
+        }
+
+        // Find products in MongoDB based on the IDs in the response
+        const products = await Product.find({ _id: { $in: data } });
+
+        // Create an object to store the products in the order of appearance
+        const productsInOrder = [];
+        for (let i = 0; i < data.length; i++) {
+            const id = data[i];
+            const product = products.find(p => p._id.toString() === id);
+            if (product) {
+                productsInOrder.push(product);
+            }
+        }
+        console.log(productsInOrder)
+        // Send the products in the order of appearance
+        res.json({ products: productsInOrder, status: 'OK' });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(404).json({ message: 'Internal server error' });
+    }
+};
 
 module.exports = {
     createProduct,
@@ -284,6 +320,7 @@ module.exports = {
     filterProduct,
     getProductByType,
     getCategories,
-    getDetailsProductAdmin
+    getDetailsProductAdmin,
+    searchImage
 
 }

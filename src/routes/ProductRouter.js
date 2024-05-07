@@ -16,6 +16,7 @@ router.get('/types-categories', ProductController.getTypeCategories)
 router.post('/filter-product', ProductController.filterProduct)
 router.get('/product-type/:type', ProductController.getProductByType)
 router.get('/categories', ProductController.getCategories)
+router.post('/search-image', ProductController.searchImage)
 
 
 module.exports = router

@@ -2,12 +2,14 @@ const { data } = require("jquery")
 const Card = require("../models/CardModel")
 const Order = require("../models/OrderModel")
 const Product = require("../models/ProductModel")
+const { sendEmailCreateOrder } = require("./EmailService")
 // const EmailService = require("../services/EmailService")
 
 const createOrder = (newOrder) => {
     return new Promise(async (resolve, reject) => {
         const { orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email, delivery } = newOrder
         try {
+            // sendEmailCreateOrder()
             const promises = orderItems.map(async (order) => {
                 const productData = await Product.findOneAndUpdate(
                     {
@@ -84,7 +86,7 @@ const createOrder = (newOrder) => {
                     isPaid, paidAt, delivery
                 })
                 if (createdOrder) {
-                    // await EmailService.sendEmailCreateOrder(email, orderItems)
+                    await sendEmailCreateOrder(email, orderItems, totalPrice)
                     resolve({
                         status: 'OK',
                         message: 'success',
@@ -92,6 +94,11 @@ const createOrder = (newOrder) => {
                     })
                 }
             }
+            // resolve({
+            //     status: 'OK',
+            //     message: 'success',
+            // }
+
         } catch (e) {
             //   console.log('e', e)
             reject(e)

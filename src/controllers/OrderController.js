@@ -1,12 +1,13 @@
+const Order = require('../models/OrderModel');
 const OrderService = require('../services/OrderService')
 
 const createOrder = async (req, res) => {
     try {
         let shipping = false;
-        const { paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, delivery } = req.body
+        const { paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, delivery, email } = req.body
         // console.log(paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, phone);
         if (shippingPrice !== undefined) shipping = true;
-        if (!paymentMethod || !itemsPrice || !shipping || !totalPrice || !fullName || !address || !city || !phone || !district || !ward || !delivery) {
+        if (!paymentMethod || !itemsPrice || !shipping || !totalPrice || !fullName || !address || !city || !phone || !district || !ward || !delivery || !email) {
             return res.status(200).json({
                 status: 'ERR',
                 message: 'The input is required'
@@ -109,6 +110,32 @@ const getAllOrder = async (req, res) => {
         })
     }
 }
+const checkProductOrderedByUser = async (req, res) => {
+    try {
+        // Tìm kiếm đơn hàng
+
+        const { userId, productId } = req.body
+
+        const order = await Order.findOne({
+            user: userId, // Điều kiện: user là userId được truyền vào
+            isCancel: false, // Điều kiện: isCancel là false
+            'orderItems.product': productId // Điều kiện: có orderItem nào có product là productId
+        });
+        if (order) {
+            console.log(order)
+
+            // Trả về mã trạng thái 200 và thông báo
+            return res.status(200).json({ status: "OK", message: "OK" })
+        } else {
+            // Trả về mã trạng thái 404 và thông báo
+            return res.status(200).json({ status: "ERR", message: "Bạn phải đặt mua sản phẩm mới có thể đánh giá" })
+        }
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra đơn hàng: ', error);
+        // Trả về mã trạng thái 500 nếu có lỗi xảy ra
+        return { status: 500, message: 'Có lỗi xảy ra khi kiểm tra đơn hàng.' };
+    }
+};
 
 module.exports = {
     createOrder,
@@ -116,6 +143,7 @@ module.exports = {
     getDetailsOrder,
     cancelOrderDetails,
     getAllOrder,
-    deleteOrderDetails
+    deleteOrderDetails,
+    checkProductOrderedByUser
 
 }

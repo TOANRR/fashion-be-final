@@ -6,7 +6,9 @@ const cors = require("cors")
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 dotenv.config()
+require('./passport')
 const app = express()
+
 console.log(`${process.env.MONGO_DB}`)
 const port = process.env.PORT || 3001
 app.get('/', (req, res) => {

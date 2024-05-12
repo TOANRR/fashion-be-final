@@ -81,15 +81,17 @@ const cancelOrderDetails = async (req, res) => {
 }
 const deleteOrderDetails = async (req, res) => {
     try {
-        const data = req.body.orderItems
+        // const data = req.body.orderItems
+
         const orderId = req.body.orderId
+        console.log(orderId)
         if (!orderId) {
             return res.status(200).json({
                 status: 'ERR',
                 message: 'The orderId is required'
             })
         }
-        const response = await OrderService.deleteOrderDetails(orderId, data)
+        const response = await OrderService.deleteOrderDetails(orderId)
         return res.status(200).json(response)
     } catch (e) {
         // console.log(e)
@@ -136,7 +138,46 @@ const checkProductOrderedByUser = async (req, res) => {
         return { status: 500, message: 'Có lỗi xảy ra khi kiểm tra đơn hàng.' };
     }
 };
+const updateOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            orderItems,
+            shippingAddress,
+            paymentMethod,
+            itemsPrice,
+            shippingPrice,
+            delivery,
+            totalPrice,
+            user,
+            isPaid,
+            paidAt,
+            deliveryStatus,
+            deliveredAt,
+            isCancel
+        } = req.body;
 
+        const updatedOrder = await Order.findByIdAndUpdate(id, {
+            orderItems,
+            shippingAddress,
+            paymentMethod,
+            itemsPrice,
+            shippingPrice,
+            delivery,
+            totalPrice,
+            user,
+            isPaid,
+            paidAt,
+            deliveryStatus,
+            deliveredAt,
+            isCancel
+        }, { new: true });
+
+        res.status(200).json({ message: "OK" });
+    } catch (error) {
+        res.status(404).json({ message: error.message });
+    }
+};
 module.exports = {
     createOrder,
     getAllOrderDetails,
@@ -144,6 +185,7 @@ module.exports = {
     cancelOrderDetails,
     getAllOrder,
     deleteOrderDetails,
-    checkProductOrderedByUser
+    checkProductOrderedByUser,
+    updateOrder
 
 }

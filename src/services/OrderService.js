@@ -86,7 +86,7 @@ const createOrder = (newOrder) => {
                     isPaid, paidAt, delivery
                 })
                 if (createdOrder) {
-                    await sendEmailCreateOrder(email, orderItems, totalPrice)
+                    // await sendEmailCreateOrder(email, orderItems, totalPrice)
                     resolve({
                         status: 'OK',
                         message: 'success',
@@ -170,11 +170,13 @@ const getOrderDetails = (id) => {
     })
 }
 
-const deleteOrderDetails = (id, data) => {
+const deleteOrderDetails = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let order = []
-            const promises = data.map(async (order) => {
+            let orders = await Order.findById(id);
+            orders = orders.orderItems
+            console.log(orders)
+            const promises = orders.map(async (order) => {
                 const productData = await Product.findOneAndUpdate(
                     {
                         _id: order.product,

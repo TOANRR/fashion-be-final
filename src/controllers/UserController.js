@@ -171,6 +171,14 @@ const deleteMany = async (req, res) => {
         })
     }
 }
+const getTotalUsers = async (req, res) => {
+    try {
+        const totalUsers = await User.countDocuments();
+        res.json({ totalUsers });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 module.exports = {
-    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany
+    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany, getTotalUsers
 }

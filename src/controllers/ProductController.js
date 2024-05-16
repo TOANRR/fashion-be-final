@@ -306,7 +306,14 @@ const searchImage = async (req, res) => {
         res.status(404).json({ message: 'Internal server error' });
     }
 };
-
+const getTotalProducts = async (req, res) => {
+    try {
+        const totalProducts = await Product.countDocuments();
+        res.json({ totalProducts });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 module.exports = {
     createProduct,
     updateProduct,
@@ -321,6 +328,7 @@ module.exports = {
     getProductByType,
     getCategories,
     getDetailsProductAdmin,
-    searchImage
+    searchImage,
+    getTotalProducts
 
 }

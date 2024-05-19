@@ -7,6 +7,7 @@ const VnpayRouter = require('./VnpayRouter')
 const ReviewRouter = require('./ReviewRouter')
 const authRouter = require('./AuthGoogleRouter')
 const dashBoard = require('./DashBoardRouter')
+const chatbot = require('./ChatBotRouter')
 const routes = (app) => {
     app.use('/api/user', UserRouter),
         app.use('/api/product', ProductRouter),
@@ -16,7 +17,8 @@ const routes = (app) => {
         app.use('/api/vnpay', VnpayRouter),
         app.use('/api/review', ReviewRouter),
         app.use('/api/auth', authRouter),
-        app.use('/api/dashboard', dashBoard)
+        app.use('/api/dashboard', dashBoard),
+        app.use('/api/chatbot', chatbot)
 
 }
 module.exports = routes

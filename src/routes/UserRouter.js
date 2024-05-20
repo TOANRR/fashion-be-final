@@ -14,5 +14,7 @@ router.get('/get-details/:id', authUserMiddleWare, userController.getDetailsUser
 router.post('/refresh-token', userController.refreshToken)
 router.post('/delete-many', authMiddleWare, userController.deleteMany)
 router.get('/get-total-user', authMiddleWare, userController.getTotalUsers)
+router.get('/count-by-day', userController.getUserCountByDay)
+router.post('/change-password/:id', authUserMiddleWare, userController.changePassword)
 
 module.exports = router

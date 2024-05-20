@@ -174,62 +174,84 @@ const deleteOrderDetails = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
             let orders = await Order.findById(id);
-            orders = orders.orderItems
-            console.log(orders)
-            const promises = orders.map(async (order) => {
-                const productData = await Product.findOneAndUpdate(
-                    {
-                        _id: order.product,
-                        'sizes.size': order.size,
-                        selled: { $gte: order.amount }
-                    },
-                    {
-                        $inc: {
-                            'sizes.$.countInStock': +order.amount,
-                            selled: -order.amount
+            if (!orders.isCancel) {
+                orders = orders.orderItems
+                console.log(orders)
+                const promises = orders.map(async (order) => {
+                    const productData = await Product.findOneAndUpdate(
+                        {
+                            _id: order.product,
+                            'sizes.size': order.size,
+                            selled: { $gte: order.amount }
+                        },
+                        {
+                            $inc: {
+                                'sizes.$.countInStock': +order.amount,
+                                selled: -order.amount
+                            }
+                        },
+                        { new: true }
+                    )
+                    if (productData) {
+                        order = await Order.findByIdAndDelete(id)
+                        if (order === null) {
+                            resolve({
+                                status: 'ERR',
+                                message: 'The order is not defined'
+                            })
                         }
-                    },
-                    { new: true }
-                )
-                if (productData) {
-                    order = await Order.findByIdAndDelete(id)
-                    if (order === null) {
-                        resolve({
-                            status: 'ERR',
-                            message: 'The order is not defined'
-                        })
                     }
-                } else {
-                    return {
-                        status: 'OK',
-                        message: 'ERR',
-                        id: order.product
+                    else {
+                        return {
+                            status: 'OK',
+                            message: 'ERR',
+                            id: order.product
+                        }
                     }
-                }
-            })
-            const results = await Promise.all(promises)
-            const newData = results && results[0] && results[0].id
+                })
+                const results = await Promise.all(promises)
+                const newData = results && results[0] && results[0].id
 
-            if (newData) {
+                if (newData) {
+                    resolve({
+                        status: 'ERR',
+                        message: `San pham voi id: ${newData} khong ton tai`
+                    })
+                }
                 resolve({
-                    status: 'ERR',
-                    message: `San pham voi id: ${newData} khong ton tai`
+                    status: 'OK',
+                    message: 'success',
+
                 })
             }
-            resolve({
-                status: 'OK',
-                message: 'success',
-                data: order
-            })
+            else {
+                await Order.findByIdAndDelete(id)
+                resolve({
+                    status: 'OK',
+                    message: 'success',
+
+                })
+            }
+
         } catch (e) {
             reject(e)
         }
     })
 }
-const cancelOrderDetails = (id, data) => {
+const cancelOrderDetails = (id, data, cancelReason) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let order = []
+            // Kiểm tra trạng thái đơn hàng trước khi tiến hành hủy
+            const orderToCancel = await Order.findOne({ _id: id });
+            if (orderToCancel.deliveryStatus === 'delivered' || orderToCancel.deliveryStatus === 'delivering') {
+                resolve({
+                    status: 'ERR',
+                    message: 'Không thể hủy đơn hàng đã vận chuyển'
+                });
+                return;
+            }
+
+            let order = [];
             const promises = data.map(async (order) => {
                 const productData = await Product.findOneAndUpdate(
                     {
@@ -244,11 +266,11 @@ const cancelOrderDetails = (id, data) => {
                         }
                     },
                     { new: true }
-                )
+                );
                 if (productData) {
                     const order = await Order.findOneAndUpdate(
                         { _id: id }, // Điều kiện tìm kiếm
-                        { isCancel: true }, // Dữ liệu cập nhật
+                        { isCancel: true, cancelReason: cancelReason }, // Dữ liệu cập nhật
                         { new: true } // Tùy chọn để trả về bản ghi đã được cập nhật
                     );
                     console.log(order)
@@ -256,36 +278,105 @@ const cancelOrderDetails = (id, data) => {
                         resolve({
                             status: 'ERR',
                             message: 'The order is not defined'
-                        })
+                        });
                     }
                 } else {
                     return {
                         status: 'OK',
                         message: 'ERR',
                         id: order.product
-                    }
+                    };
                 }
-            })
-            const results = await Promise.all(promises)
-            const newData = results && results[0] && results[0].id
+            });
+            const results = await Promise.all(promises);
+            const newData = results && results[0] && results[0].id;
 
             if (newData) {
                 resolve({
                     status: 'ERR',
-                    message: `San pham voi id: ${newData} khong ton tai`
-                })
+                    message: `Sản phẩm với id: ${newData} không tồn tại`
+                });
             }
             resolve({
                 status: 'OK',
                 message: 'success',
                 data: order
-            })
+            });
         } catch (e) {
-            reject(e)
+            reject(e);
         }
-    })
-}
+    });
+};
 
+const cancelOrderDetailsAdmin = (id, cancelReason) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Kiểm tra trạng thái đơn hàng trước khi tiến hành hủy
+            const orderToCancel = await Order.findOne({ _id: id });
+            // if (orderToCancel.deliveryStatus === 'delivered' || orderToCancel.deliveryStatus === 'delivering') {
+            //     resolve({
+            //         status: 'ERR',
+            //         message: 'Không thể hủy đơn hàng đã vận chuyển'
+            //     });
+            //     return;
+            // }
+
+            let order = [];
+            const promises = orderToCancel.orderItems.map(async (order) => {
+                const productData = await Product.findOneAndUpdate(
+                    {
+                        _id: order.product,
+                        'sizes.size': order.size,
+                        selled: { $gte: order.amount }
+                    },
+                    {
+                        $inc: {
+                            'sizes.$.countInStock': +order.amount,
+                            selled: -order.amount
+                        }
+                    },
+                    { new: true }
+                );
+                if (productData) {
+                    const order = await Order.findOneAndUpdate(
+                        { _id: id }, // Điều kiện tìm kiếm
+                        { isCancel: true, cancelReason: cancelReason }, // Dữ liệu cập nhật
+                        { new: true } // Tùy chọn để trả về bản ghi đã được cập nhật
+                    );
+                    console.log(order)
+                    if (order === null) {
+                        resolve({
+                            status: 'ERR',
+                            message: 'The order is not defined'
+                        });
+                    }
+                } else {
+                    return {
+                        status: 'OK',
+                        message: 'ERR',
+                        id: order.product
+                    };
+                }
+            });
+            const results = await Promise.all(promises);
+            const newData = results && results[0] && results[0].id;
+
+            if (newData) {
+                resolve({
+                    status: 'ERR',
+                    message: `Sản phẩm với id: ${newData} không tồn tại`
+                });
+            }
+            resolve({
+                status: 'OK',
+                message: 'success',
+                data: order
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
 const getAllOrder = (start, end) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -313,5 +404,6 @@ module.exports = {
     getOrderDetails,
     cancelOrderDetails,
     getAllOrder,
-    deleteOrderDetails
+    deleteOrderDetails,
+    cancelOrderDetailsAdmin
 }

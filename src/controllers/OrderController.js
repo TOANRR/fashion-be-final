@@ -64,13 +64,35 @@ const cancelOrderDetails = async (req, res) => {
     try {
         const data = req.body.orderItems
         const orderId = req.body.orderId
+        const cancelReason = req.body.cancelReason
+
         if (!orderId) {
             return res.status(200).json({
                 status: 'ERR',
                 message: 'The orderId is required'
             })
         }
-        const response = await OrderService.cancelOrderDetails(orderId, data)
+        const response = await OrderService.cancelOrderDetails(orderId, data, cancelReason)
+        return res.status(200).json(response)
+    } catch (e) {
+        // console.log(e)
+        return res.status(404).json({
+            message: e
+        })
+    }
+}
+const cancelOrderDetailsAdmin = async (req, res) => {
+    try {
+        const orderId = req.body.orderId
+        const cancelReason = req.body.cancelReason
+
+        if (!orderId) {
+            return res.status(200).json({
+                status: 'ERR',
+                message: 'The orderId is required'
+            })
+        }
+        const response = await OrderService.cancelOrderDetailsAdmin(orderId, cancelReason)
         return res.status(200).json(response)
     } catch (e) {
         // console.log(e)
@@ -204,38 +226,96 @@ const getTotalRevenueAndOrders = async (req, res) => {
 const getRevenueInRange = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        console.log(startDate, endDate)
 
-        // Chuyển đổi ngày bắt đầu và kết thúc từ string sang đối tượng Date
+        // Convert startDate and endDate from strings to Date objects
         const start = new Date(startDate);
         const end = new Date(endDate);
-        console.log(start, end)
-        // Truy vấn cơ sở dữ liệu để lấy tổng doanh thu cho mỗi ngày trong khoảng thời gian từ startDate đến endDate
+
+        // Log dates for debugging
+        console.log(`Start Date: ${start}, End Date: ${end}`);
+
+        // Query the database to get total revenue per day in the specified date range
         const revenueByDay = await Order.aggregate([
             {
                 $match: {
                     createdAt: {
-                        $gte: start, // Lớn hơn hoặc bằng ngày bắt đầu
-                        $lte: end // Nhỏ hơn hoặc bằng ngày kết thúc
-                    }
+                        $gte: start, // Greater than or equal to start date
+                        $lte: end    // Less than or equal to end date
+                    },
+                    isPaid: true,// Only include orders that are paid,
+                    isCancel: false
                 }
             },
             {
                 $group: {
-                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, // Format ngày thành chuỗi "YYYY-MM-DD"
-                    totalRevenue: { $sum: "$totalPrice" }
+                    _id: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$createdAt",
+                            timezone: "Asia/Ho_Chi_Minh" // Format date in Vietnam's time zone
+                        }
+                    },
+                    totalRevenue: { $sum: "$totalPrice" } // Sum totalPrice for each day
                 }
             },
-            { $sort: { _id: 1 } } // Sắp xếp kết quả theo ngày tăng dần
+            {
+                $sort: { _id: 1 } // Sort by date in ascending order
+            }
         ]);
 
-        // Trả về kết quả
+        // Log the result for debugging
+        console.log("Revenue by Day:", revenueByDay);
+
+        // Send the result back to the client
         res.json(revenueByDay);
     } catch (error) {
         console.error("Error fetching revenue in range:", error);
         res.status(404).json({ message: "Server error" });
     }
 };
+
+const searchOrdersByStatus = async (req, res) => {
+    const { status } = req.query;
+    const userId = req.params.id; // Lấy userId từ req.params
+
+    try {
+        let orders;
+
+        // Tìm kiếm đơn hàng theo trạng thái và id người dùng
+        switch (status) {
+            case 'all':
+                orders = await Order.find({ user: userId }).sort({ createdAt: -1 }); // Lọc theo id người dùng
+                break;
+            case 'unpaid':
+                orders = await Order.find({ user: userId, isPaid: false, isCancel: false }).sort({ createdAt: -1 });
+                break;
+            case 'paid':
+                orders = await Order.find({ user: userId, isPaid: true, isCancel: false }).sort({ createdAt: -1 });
+                break;
+            case 'not_shipped':
+                orders = await Order.find({ user: userId, deliveryStatus: 'not_deliveredl', isCancel: false }).sort({ createdAt: -1 });
+                break;
+            case 'shipping':
+                orders = await Order.find({ user: userId, deliveryStatus: 'delivering', isCancel: false }).sort({ createdAt: -1 });
+                break;
+            case 'shipped':
+                orders = await Order.find({ user: userId, deliveryStatus: 'delivered', isCancel: false }).sort({ createdAt: -1 });
+                break;
+            case 'cancelled':
+                orders = await Order.find({ user: userId, isCancel: true }).sort({ createdAt: -1 });
+                break;
+            default:
+                return res.status(400).json({ success: false, message: 'Invalid status' });
+        }
+
+        res.status(200).json({ success: true, data: orders });
+    } catch (error) {
+        console.error('Error searching orders:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+
 
 module.exports = {
     createOrder,
@@ -247,6 +327,8 @@ module.exports = {
     checkProductOrderedByUser,
     updateOrder,
     getTotalRevenueAndOrders,
-    getRevenueInRange
+    getRevenueInRange,
+    searchOrdersByStatus,
+    cancelOrderDetailsAdmin
 
 }

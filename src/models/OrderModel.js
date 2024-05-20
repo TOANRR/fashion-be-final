@@ -35,7 +35,9 @@ const orderSchema = new mongoose.Schema({
     deliveryStatus: { type: String, default: 'not_delivered' },
     deliveredAt: { type: Date },
     isCancel: { type: Boolean, default: false },
-    // cancelReason: { type: String }
+    cancelReason: { type: String }
+
+
 
 },
     {

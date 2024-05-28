@@ -7,7 +7,7 @@ const { sendEmailCreateOrder } = require("./EmailService")
 
 const createOrder = (newOrder) => {
     return new Promise(async (resolve, reject) => {
-        const { orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email, delivery } = newOrder
+        const { id, orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email, delivery } = newOrder
         try {
             // sendEmailCreateOrder()
             const promises = orderItems.map(async (order) => {
@@ -71,27 +71,54 @@ const createOrder = (newOrder) => {
                     message: `Sản phẩm với id: ${arrId.join(',')} không đủ hàng`
                 })
             } else {
-                const createdOrder = await Order.create({
-                    orderItems,
-                    shippingAddress: {
-                        fullName,
-                        address,
-                        city, phone, ward, district
-                    },
-                    paymentMethod,
-                    itemsPrice,
-                    shippingPrice,
-                    totalPrice,
-                    user: user,
-                    isPaid, paidAt, delivery
-                })
-                if (createdOrder) {
-                    // await sendEmailCreateOrder(email, orderItems, totalPrice)
-                    resolve({
-                        status: 'OK',
-                        message: 'success',
-                        data: createdOrder
+                if (id) {
+                    const createdOrder = await Order.create({
+                        _id: id,
+                        orderItems,
+                        shippingAddress: {
+                            fullName,
+                            address,
+                            city, phone, ward, district
+                        },
+                        paymentMethod,
+                        itemsPrice,
+                        shippingPrice,
+                        totalPrice,
+                        user: user,
+                        isPaid, paidAt, delivery
                     })
+                    if (createdOrder) {
+                        // await sendEmailCreateOrder(email, orderItems, totalPrice)
+                        resolve({
+                            status: 'OK',
+                            message: 'success',
+                            data: createdOrder
+                        })
+                    }
+                }
+                else {
+                    const createdOrder = await Order.create({
+                        orderItems,
+                        shippingAddress: {
+                            fullName,
+                            address,
+                            city, phone, ward, district
+                        },
+                        paymentMethod,
+                        itemsPrice,
+                        shippingPrice,
+                        totalPrice,
+                        user: user,
+                        isPaid, paidAt, delivery
+                    })
+                    if (createdOrder) {
+                        // await sendEmailCreateOrder(email, orderItems, totalPrice)
+                        resolve({
+                            status: 'OK',
+                            message: 'success',
+                            data: createdOrder
+                        })
+                    }
                 }
             }
             // resolve({

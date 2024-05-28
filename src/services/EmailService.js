@@ -72,7 +72,37 @@ const generateOrderEmail = (orderItems, totalPrice) => {
 
     return htmlContent;
 };
+const sendEmailResetPassword = async (email, token) => {
+    try {
+        let transporter = nodemailer.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true, // true for 465, false for other ports
+            auth: {
+                user: process.env.MAIL_ACCOUNT, // your email
+                pass: process.env.MAIL_PASSWORD, // your email password
+            },
+        });
 
+        // send mail with defined transport object
+        let info = await transporter.sendMail({
+            from: process.env.MAIL_ACCOUNT, // sender address
+            to: email, // list of receivers
+            subject: "Password Reset", // Subject line
+            text: `Bạn nhận được thông báo này vì bạn (hoặc người khác) đã yêu cầu đặt lại mật khẩu cho tài khoản của mình tại web TKLFashion.
+            Vui lòng nhấp vào liên kết sau hoặc dán liên kết này vào trình duyệt của bạn để hoàn tất quy trình:\n\n
+            ${process.env.URL_CLIENT}/reset-password/${token}\n\n
+            Nếu bạn không yêu cầu điều này, vui lòng bỏ qua email này và mật khẩu của bạn sẽ không thay đổi.\n`
+        });
+
+        console.log("Email đã được gửi: %s", info.messageId);
+        return { success: true };
+    } catch (error) {
+        console.error("Lỗi xảy ra khi gửi email:", error);
+        return { success: false, message: "Không thể gửi email đặt lại mật khẩu." };
+    }
+}
 module.exports = {
-    sendEmailCreateOrder
+    sendEmailCreateOrder,
+    sendEmailResetPassword
 }

@@ -6,7 +6,6 @@ const Product = require('../models/ProductModel');
 // Controller function to get total revenue and orders
 const getTotalRevenueAndOrders = async (req, res) => {
     try {
-        console.log("hello")
         const totalRevenue = await Order.aggregate([
             {
                 $match: { isCancel: false, isPaid: true } // Filter out cancelled and unpaid orders

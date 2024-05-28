@@ -2,52 +2,12 @@ const { WebhookClient } = require("dialogflow-fulfillment");
 const productInf = require("./helpers");
 const { Card, Suggestion } = require('dialogflow-fulfillment');
 const { Payload } = require("dialogflow-fulfillment");
-// async function getProductInf(productName, agent) {
-//     const product = await productInf.getProductByName(productName);
+const dotenv = require('dotenv');
 
-//     if (product) {
+function removeHTMLTags(str) {
+    return str.replace(/<[^>]*>/g, '');
+}
 
-//         let response = `Tên: ${product.name}\n`;
-//         response += `Loại: ${product.type}\n`;
-//         response += `Danh mục: ${product.category}\n`;
-//         response += `Giá: ${product.price} VND\n`;
-//         response += `Kích thước: ${product.sizes.map(s => `${s.size} (còn ${s.countInStock} sản phẩm )`).join(', ')}\n`;
-//         response += `Mô tả: ${product.description || 'Không có'}\n`;
-//         response += `Giảm giá: ${product.discount || 'Không có'}\n`;
-//         response += `Đã bán: ${product.selled || 0}`;
-
-//         // Gửi thông tin sản phẩm
-//         // agent.add(response);
-
-//         // Gửi hình ảnh sản phẩm nếu có
-//         let payload = {
-//             "facebook": {
-//                 "attachment": {
-//                     "type": "image",
-//                     "payload": {
-//                         "url": product.images[0] || '' // Hiển thị hình ảnh đầu tiên nếu có
-//                     }
-//                 },
-//                 "text": response // Hiển thị thông tin chi tiết về sản phẩm
-//             },
-//         };
-
-//         agent.add(new Payload(agent.UNSPECIFIED, payload, { rawPayload: true, sendAsMessage: true }));
-
-//     } else {
-//         const similarProduct = await productInf.findSimilarProduct(productName);
-//         if (similarProduct) {
-//             agent.context.set({ name: "get_product_infor", lifespan: 5, parameters: { productName: similarProduct.name } });
-//             const response = `Xin lỗi, tôi không tìm thấy sản phẩm với tên ${productName}. Bạn có phải đang tìm kiếm mặt hàng ${similarProduct.name} không?`;
-//             agent.add(response);
-
-//         } else {
-//             const response = `Xin lỗi, tôi không tìm thấy sản phẩm với tên ${productName}.`;
-//             agent.add(response);
-
-//         }
-//     }
-// }
 async function getProductInf(productName, agent) {
     const product = await productInf.getProductByName(productName);
 
@@ -57,7 +17,7 @@ async function getProductInf(productName, agent) {
         response += `Danh mục: ${product.category}\n`;
         response += `Giá: ${product.price} VND\n`;
         response += `Kích thước: ${product.sizes.map(s => `${s.size} (còn ${s.countInStock} sản phẩm )`).join(', ')}\n`;
-        response += `Mô tả: ${product.description || 'Không có'}\n`;
+        response += `Mô tả: ${removeHTMLTags(product.description) || 'Không có'}\n`;
         response += `Giảm giá: ${product.discount || 'Không có'}\n`;
         response += `Đã bán: ${product.selled || 0}`;
         const payload = {
@@ -72,7 +32,7 @@ async function getProductInf(productName, agent) {
                                 "rawUrl": `${product.images[0]}`
                             }
                         },
-                        "actionLink": "https://fe-deploy-yj5a-git-main-toanrrs-projects.vercel.app"
+                        "actionLink": `${process.env.URL_CLIENT}`
                     }
                 ]
             ]
@@ -129,9 +89,17 @@ const chatBot = async (req, res) => {
         }
         if (intent === "get_product_infor - yes") {
             // const productName = agent.parameters.productName;
-            const productName = agent.context.get("get_product_infor").parameters['productName'];
-            console.log("Sản phẩm:", productName);
-            const product = await getProductInf(productName, agent);
+            const context = agent.contexts.find(ctx => ctx.name === 'get_product_infor');
+            if (context) {
+                const productName = agent.context.get("get_product_infor").parameters['productName'];
+                console.log("Sản phẩm:", productName);
+                const product = await getProductInf(productName, agent);
+            }
+            else {
+                const response = `Xin lỗi, tôi không hiểu ạ`
+                agent.add(response);
+
+            }
             // agent.add(product)
             // agent.add(new Payload(agent.UNSPECIFIED, product, { rawPayload: true, sendAsMessage: true }))
         }

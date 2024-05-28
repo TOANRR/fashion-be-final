@@ -12,6 +12,7 @@ const moment = require('moment');
 const dotenv = require('dotenv');
 const Order = require('../models/OrderModel');
 const OrderService = require('../services/OrderService')
+const { ObjectId } = require('mongodb');
 
 dotenv.config()
 
@@ -36,8 +37,9 @@ router.post('/create_payment_url', function (req, res, next) {
     let returnUrl = process.env.vnp_ReturnUrl;
     console.log(returnUrl)
     let orderId = req.body.id;
+    console.log(req.body.id)
     let amount = req.body.amount;
-    console.log(amount)
+    console.log(orderId, amount)
     let bankCode = '';
 
     let locale = 'vn';
@@ -96,7 +98,7 @@ router.post('/vnpay_return', async function (req, res, next) {
     let signData = querystring.stringify(vnp_Params, { encode: false });
     let crypto = require("crypto");
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
     if (secureHash === signed) {
         //Kiem tra xem du lieu trong db co hop le hay khong va thong bao ket qua
@@ -139,7 +141,10 @@ router.post('/vnpay_return', async function (req, res, next) {
 
 
 router.post('/vnpay_ipn', async function (req, res, next) {
-    let vnp_Params = req.body;
+    let vnp_Params = req.body.vnp_Params;
+    console.log(vnp_Params)
+    const order = req.body.order;
+    console.log("order", order.uuid)
     let secureHash = vnp_Params['vnp_SecureHash'];
 
     let orderId = vnp_Params['vnp_TxnRef'];
@@ -155,14 +160,15 @@ router.post('/vnpay_ipn', async function (req, res, next) {
     let signData = querystring.stringify(vnp_Params, { encode: false });
     let crypto = require("crypto");
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer(signData, 'utf-8')).digest("hex");
-
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+    console.log(signed)
     let paymentStatus = '0'; // Giả sử '0' là trạng thái khởi tạo giao dịch, chưa có IPN. Trạng thái này được lưu khi yêu cầu thanh toán chuyển hướng sang Cổng thanh toán VNPAY tại đầu khởi tạo đơn hàng.
     //let paymentStatus = '1'; // Giả sử '1' là trạng thái thành công bạn cập nhật sau IPN được gọi và trả kết quả về nó
     //let paymentStatus = '2'; // Giả sử '2' là trạng thái thất bại bạn cập nhật sau IPN được gọi và trả kết quả về nó
 
-    let checkOrderId = true; // Mã đơn hàng "giá trị của vnp_TxnRef" VNPAY phản hồi tồn tại trong CSDL của bạn
-    let checkAmount = true; // Kiểm tra số tiền "giá trị của vnp_Amout/100" trùng khớp với số tiền của đơn hàng trong CSDL của bạn
+    let checkOrderId = vnp_Params['vnp_TxnRef'] === order.uuid; // Mã đơn hàng "giá trị của vnp_TxnRef" VNPAY phản hồi tồn tại trong CSDL của bạn
+    let checkAmount = ((vnp_Params['vnp_Amount'] / 100) === order.totalPrice); // Kiểm tra số tiền "giá trị của vnp_Amout/100" trùng khớp với số tiền của đơn hàng trong CSDL của bạn
+    // console.log(checkAmount)
     if (secureHash === signed) { //kiểm tra checksum
         if (checkOrderId) {
             if (checkAmount) {
@@ -171,78 +177,56 @@ router.post('/vnpay_ipn', async function (req, res, next) {
                         //thanh cong
                         //paymentStatus = '1'
                         // Ở đây cập nhật trạng thái giao dịch thanh toán thành công vào CSDL của bạn
-                        try {
-                            const order = await Order.findOneAndUpdate(
-                                { _id: vnp_Params['vnp_TxnRef'], isPaid: false },
-                                // Dữ liệu mới sẽ được cập nhật
+                        const existingOrder = await Order.findById(order?.uuid)
+
+                        if (!existingOrder) {
+                            const newOrder = await OrderService.createOrder(
                                 {
+                                    id: order.uuid,
+                                    orderItems: order.orderItemsSlected,
+                                    paymentMethod: order.paymentMethod,
+                                    itemsPrice: order.itemsPrice,
+                                    shippingPrice: order.shippingPrice,
+                                    totalPrice: order.totalPrice,
+                                    fullName: order.shippingAddress.fullName,
+                                    address: order.shippingAddress.address,
+                                    city: order.shippingAddress.city,
+                                    district: order.shippingAddress.district,
+                                    ward: order.shippingAddress.ward,
+                                    phone: order.shippingAddress.phone,
+                                    user: order.user,
                                     isPaid: true,
-                                    paidAt: new Date(), // Thời điểm hiện tại
-                                },
-                                // Cài đặt để nhận lại đối tượng đã cập nhật mới
-                                { new: true }
-                            );
-
-
-                            // return updatedOrder;
-                        } catch (error) {
-                            return res.status(404).json({
-                                status: 'ERR'
-
-                            })
+                                    paidAt: new Date().toISOString(),
+                                    delivery: order.delivery
+                                }
+                            )
+                            res.status(200).json({ RspCode: '00', Message: 'Success', data: newOrder.data })
                         }
-                        const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-                        return res.status(200).json({
-                            status: 'OK',
-                            data: order
+                        else
+                            res.status(200).json({ RspCode: '00', Message: 'Success', data: existingOrder })
 
-                        })
-                        // res.status(200).json({ RspCode: '00', Message: 'Success' })
                     }
                     else {
-                        // //that bai
-                        // //paymentStatus = '2'
-                        // // Ở đây cập nhật trạng thái giao dịch thanh toán thất bại vào CSDL của bạn
-                        // res.status(200).json({ RspCode: '00', Message: 'Success' })
-                        // await Order.findOneAndDelete({ _id: vnp_Params['vnp_TxnRef'], isPaid: false });
-                        const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-                        if (order)
-                            await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
-
-                        res.status(200).json({ status: 'ERR', RspCode: '02', Message: 'This order has been updated to the payment status' })
+                        //that bai
+                        //paymentStatus = '2'
+                        // Ở đây cập nhật trạng thái giao dịch thanh toán thất bại vào CSDL của bạn
+                        res.status(200).json({ RspCode: '01', Message: 'Giao dịch thất bại' })
                     }
                 }
                 else {
-                    const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-                    if (order)
-                        await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
-
-                    res.status(200).json({ status: 'ERR', RspCode: '02', Message: 'This order has been updated to the payment status' })
+                    res.status(200).json({ RspCode: '02', Message: 'This order has been updated to the payment status' })
                 }
             }
             else {
-                const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-                if (order)
-                    await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
-
-                res.status(200).json({ status: 'ERR', RspCode: '04', Message: 'Amount invalid' })
+                res.status(200).json({ RspCode: '04', Message: 'Amount invalid' })
             }
         }
         else {
-            const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-            if (order)
-                await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
-
-            res.status(200).json({ status: 'ERR', RspCode: '01', Message: 'Order not found' })
+            res.status(200).json({ RspCode: '01', Message: 'Order not found' })
         }
     }
     else {
-        const order = await Order.findById(vnp_Params['vnp_TxnRef']);
-        console.log("log", order)
-        if (order)
-            await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
-
-        res.status(200).json({ status: 'ERR', RspCode: '97', Message: 'Checksum failed' })
+        res.status(200).json({ RspCode: '97', Message: 'Checksum failed' })
     }
 });
 

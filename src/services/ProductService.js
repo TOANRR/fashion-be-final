@@ -37,7 +37,7 @@ const createProduct = (newProduct) => {
                         id: createdProduct._id,
                         images: createdProduct.images
                     });
-                    console.log('Response from server:', response.data);
+                    // console.log('Response from server:', response.data);
                 } catch (error) {
                     console.error('Error sending data to server:', error);
                 }
@@ -332,7 +332,7 @@ const findManyByObj = (limit, page, ids) => {
 const getDetailsProductAdmin = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log("here")
+            // console.log("here")
             const product = await Product.findOne({
                 _id: id
             })

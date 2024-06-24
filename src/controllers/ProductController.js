@@ -375,6 +375,44 @@ const getTopSellingProducts = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
+const checkStock = async (req, res) => {
+    try {
+        const products = req.body.products; // Danh sách các sản phẩm cần kiểm tra
+        const outOfStockProducts = [];
+        console.log(products)
+
+        // Duyệt qua từng sản phẩm trong danh sách
+        for (const product of products) {
+            // Tìm sản phẩm trong cơ sở dữ liệu
+            const foundProduct = await Product.findOne({
+                _id: product.product, 'sizes': {
+                    $elemMatch: {
+                        size: product.size,
+                        countInStock: { $gte: product.amount }
+                    }
+                }
+            });
+
+            // Kiểm tra xem sản phẩm có tồn kho đủ không
+            if (!foundProduct) {
+                // Nếu không đủ tồn kho, thêm vào danh sách sản phẩm không đủ
+                outOfStockProducts.push(product.name);
+            }
+        }
+
+        if (outOfStockProducts.length > 0) {
+            // Nếu có sản phẩm không đủ tồn kho, trả về thông báo lỗi
+            return res.status(200).json({ success: false, message: 'Sản phẩm sau không đủ tồn kho: ' + outOfStockProducts.join(', ') });
+        } else {
+            // Nếu tất cả các sản phẩm đều có tồn kho đủ, tiếp tục xử lý
+            // ở đây bạn có thể thêm mã logic cho việc đặt hàng hoặc xử lý tiếp theo
+            return res.status(200).json({ success: true, message: 'Tất cả sản phẩm đều có tồn kho đủ.' });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(404).json({ message: 'Đã xảy ra lỗi khi kiểm tra tồn kho sản phẩm.' });
+    }
+};
 module.exports = {
     createProduct,
     updateProduct,
@@ -393,6 +431,7 @@ module.exports = {
     getTotalProducts,
     getProductByCategory,
     searchProducts,
-    getTopSellingProducts
+    getTopSellingProducts,
+    checkStock
 
 }

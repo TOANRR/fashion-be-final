@@ -43,12 +43,12 @@ const loginUser = async (req, res) => {
         if (!email || !password) {
             return res.status(200).json({
                 status: 'ERR',
-                message: 'The input is required'
+                message: 'Thiếu thông tin đăng nhập'
             })
         } else if (!isCheckEmail) {
             return res.status(200).json({
                 status: 'ERR',
-                message: 'The input is email'
+                message: 'Định dạng email không đúng'
             })
         }
         const response = await UserService.loginUser(req.body)
@@ -139,6 +139,7 @@ const refreshToken = async (req, res) => {
             })
         }
         const response = await JwtService.refreshTokenJwtService(token)
+        console.log(response)
         return res.status(200).json(response)
     } catch (e) {
         return res.status(404).json({

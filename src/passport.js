@@ -30,7 +30,7 @@ passport.use(new GoogleStrategy({
                     id: existingUser.id,
                     isAdmin: existingUser.isAdmin
                 })
-                return done(null, { accessToken, refreshToken });
+                return done(null, { accessToken, refreshToken, id: existingUser.id });
             } else {
                 // Nếu người dùng chưa tồn tại, tạo mới người dùng
                 const newUser = new User({

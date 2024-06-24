@@ -15,9 +15,18 @@ router.get('/google',
 //     res.redirect(`${process.env.URL_CLIENT}/`)
 // })
 router.get('/google/callback', passport.authenticate('google', { session: false }), (req, res) => {
-    const { accessToken, refreshToken } = req.user;
+    const { accessToken, refreshToken, id } = req.user;
+    console.log(id)
+    if (id) {
+        console.log('here')
+        res.redirect(`${process.env.URL_CLIENT}/login-success?accessToken=${accessToken}&refreshToken=${refreshToken}&id=${id}`);
+
+    }
     // Chuyển hướng người dùng và gửi JWT trong URL
-    res.redirect(`${process.env.URL_CLIENT}/login-success?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    else {
+        res.redirect(`${process.env.URL_CLIENT}/login-success?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+
+    }
 });
 
 

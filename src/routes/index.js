@@ -9,6 +9,7 @@ const authRouter = require('./AuthGoogleRouter')
 const dashBoardRouter = require('./DashBoardRouter')
 const chatbotRouter = require('./ChatBotRouter')
 const articleRouter = require('./ArticleRouter')
+const commentRouter = require('./CommentRouter.js')
 const routes = (app) => {
     app.use('/api/user', UserRouter),
         app.use('/api/product', ProductRouter),
@@ -20,7 +21,8 @@ const routes = (app) => {
         app.use('/api/auth', authRouter),
         app.use('/api/dashboard', dashBoardRouter),
         app.use('/api/chatbot', chatbotRouter),
-        app.use('/api/article', articleRouter)
+        app.use('/api/article', articleRouter),
+        app.use('/api/comment', commentRouter)
 
 
 }

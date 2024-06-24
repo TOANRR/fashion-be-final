@@ -24,10 +24,10 @@ const getTotalRevenueAndOrders = async (req, res) => {
         const totalProducts = await Product.countDocuments(); // Count total products
         const totalOrders = await Order.countDocuments(); // Count total orders regardless of their status
 
-        console.log(totalRevenue[0].totalRevenue,
+        // console.log(totalRevenue[0].totalRevenue,
 
-            totalUsers,
-            totalProducts)
+        //     totalUsers,
+        //     totalProducts)
         res.status(200).json({
             totalRevenue: totalRevenue[0].totalRevenue,
             totalOrders: totalOrders,

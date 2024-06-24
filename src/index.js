@@ -10,7 +10,7 @@ require('./passport')
 const app = express()
 const fs = require('fs');
 
-// Hàm để tái tải lại biến môi trường từ file .env
+// // // Hàm để tái tải lại biến môi trường từ file .env
 const reloadEnv = () => {
     // Đọc lại nội dung của file .env
     const envConfig = dotenv.parse(fs.readFileSync('.env'));
@@ -21,7 +21,7 @@ const reloadEnv = () => {
     }
 };
 
-// Sử dụng hàm reloadEnv để tái tải lại biến môi trường
+// // Sử dụng hàm reloadEnv để tái tải lại biến môi trường
 reloadEnv();
 // console.log(`${process.env.MONGO_DB}`)
 // console.log(process.env)

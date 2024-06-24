@@ -27,6 +27,7 @@ const createOrder = async (req, res) => {
                 message: 'The input is required'
             })
         }
+        console.log("tao orrderr")
         const response = await OrderService.createOrder(req.body)
         return res.status(200).json(response)
     } catch (e) {
@@ -246,7 +247,7 @@ const getRevenueInRange = async (req, res) => {
         const end = new Date(endDate);
         end.setDate(end.getDate() + 1);
         // Log dates for debugging
-        console.log(`Start Date: ${start}, End Date: ${end}`);
+        // console.log(`Start Date: ${start}, End Date: ${end}`);
 
         // Query the database to get total revenue per day in the specified date range
         const revenueByDay = await Order.aggregate([
@@ -278,7 +279,7 @@ const getRevenueInRange = async (req, res) => {
         ]);
 
         // Log the result for debugging
-        console.log("Revenue by Day:", revenueByDay);
+        // console.log("Revenue by Day:", revenueByDay);
 
         // Send the result back to the client
         res.json(revenueByDay);

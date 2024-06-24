@@ -4,6 +4,7 @@ dotenv.config()
 // var inlineBase64 = require('nodemailer-plugin-inline-base64');
 
 const sendEmailCreateOrder = async (email, orderItems, totalPrice) => {
+    // console.log("da vao email")
     let transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
@@ -41,7 +42,7 @@ const generateOrderEmail = (orderItems, totalPrice) => {
 
     // Chèn logo của cửa hàng
     htmlContent += '<img src="https://firebasestorage.googleapis.com/v0/b/economerce-89f59.appspot.com/o/files%2Flogologin.png?alt=media&token=82ef63bb-cbe1-48be-a1d0-912702ebb63a" style="max-width: 200px; margin-bottom: 20px;">';
-
+    // htmlContent += `<span> Mã đơn hàng: ${item._id}</span>`
     // Bắt đầu bảng
     htmlContent += '<table style="width:100%; border-collapse: collapse;">';
     htmlContent += '<tr>';

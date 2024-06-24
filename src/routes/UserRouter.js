@@ -17,5 +17,5 @@ router.get('/get-total-user', authMiddleWare, userController.getTotalUsers)
 router.get('/count-by-day', authMiddleWare, userController.getUserCountByDay)
 router.post('/change-password/:id', authUserMiddleWare, userController.changePassword)
 router.post('/forgot-password', userController.forgotPassword);
-router.post('/reset-password', authMiddleWare, userController.resetPassword);
+router.post('/reset-password', userController.resetPassword);
 module.exports = router

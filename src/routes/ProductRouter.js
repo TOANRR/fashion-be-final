@@ -21,5 +21,6 @@ router.post('/search-image', ProductController.searchImage)
 router.get('/total-product', ProductController.getTotalProducts)
 router.get('/search-name', ProductController.searchProducts)
 router.get('/top-selling-products', authMiddleWare, ProductController.getTopSellingProducts)
+router.post('/check-stock', ProductController.checkStock)
 
 module.exports = router

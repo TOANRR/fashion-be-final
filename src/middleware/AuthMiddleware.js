@@ -3,7 +3,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 const authMiddleWare = (req, res, next) => {
-    console.log(req.headers.token)
+    // console.log(req.headers.token)
     const token = req.headers.token.split(' ')[1]
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, user) {
         if (err) {
@@ -23,7 +23,7 @@ const authMiddleWare = (req, res, next) => {
     });
 }
 const authUserMiddleWare = (req, res, next) => {
-    console.log("token:", req.headers)
+    // console.log("token:", req.headers)
     const token = req.headers.token.split(' ')[1]
     //  console.log("token:",token)
     const userId = req.params.id

@@ -11,8 +11,12 @@ const createOrder = (newOrder) => {
                 const productData = await Product.findOneAndUpdate(
                     {
                         _id: order.product,
-                        'sizes.size': order.size,
-                        'sizes.countInStock': { $gte: order.amount }
+                        'sizes': {
+                            $elemMatch: {
+                                size: order.size,
+                                countInStock: { $gte: order.amount }
+                            }
+                        }
                     },
                     {
                         $inc: {
@@ -22,6 +26,8 @@ const createOrder = (newOrder) => {
                     },
                     { new: true }
                 )
+
+                console.log(productData)
                 if (productData) {
                     return {
                         status: 'OK',
@@ -40,7 +46,8 @@ const createOrder = (newOrder) => {
                 await Card.deleteOne(
                     {
                         user: user,
-                        product: order.product
+                        product: order.product,
+                        size: order.size
                     }
                 )
                 return {
@@ -212,6 +219,7 @@ const cancelOrderDetails = (id, data) => {
 const getAllOrder = () => {
     return new Promise(async (resolve, reject) => {
         try {
+
             const allOrder = await Order.find().sort({ createdAt: -1, updatedAt: -1 })
             resolve({
                 status: 'OK',

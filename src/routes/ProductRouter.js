@@ -15,8 +15,12 @@ router.get('/get-all-type', ProductController.getAllType)
 router.get('/types-categories', ProductController.getTypeCategories)
 router.post('/filter-product', ProductController.filterProduct)
 router.get('/product-type/:type', ProductController.getProductByType)
+router.get('/product-category/:category', ProductController.getProductByCategory)
 router.get('/categories', ProductController.getCategories)
 router.post('/search-image', ProductController.searchImage)
 router.get('/total-product', ProductController.getTotalProducts)
+router.get('/search-name', ProductController.searchProducts)
+router.get('/top-selling-products', authMiddleWare, ProductController.getTopSellingProducts)
+router.post('/check-stock', ProductController.checkStock)
 
 module.exports = router

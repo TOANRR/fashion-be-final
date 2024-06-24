@@ -3,101 +3,162 @@ const Card = require("../models/CardModel")
 const Order = require("../models/OrderModel")
 const Product = require("../models/ProductModel")
 const { sendEmailCreateOrder } = require("./EmailService")
+const User = require("../models/UserModel")
 // const EmailService = require("../services/EmailService")
 
 const createOrder = (newOrder) => {
     return new Promise(async (resolve, reject) => {
-        const { orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email, delivery } = newOrder
+        const { id, orderItems, paymentMethod, itemsPrice, shippingPrice, totalPrice, fullName, address, city, district, ward, phone, user, isPaid, paidAt, email, delivery } = newOrder
         try {
             // sendEmailCreateOrder()
-            const promises = orderItems.map(async (order) => {
-                const productData = await Product.findOneAndUpdate(
-                    {
-                        _id: order.product,
-                        'sizes': {
-                            $elemMatch: {
-                                size: order.size,
-                                countInStock: { $gte: order.amount }
-                            }
-                        }
-                    },
-                    {
-                        $inc: {
-                            'sizes.$.countInStock': -order.amount,
-                            selled: +order.amount
-                        }
-                    },
-                    { new: true }
-                )
+            const outOfStockProducts = [];
+            const products = orderItems; // Danh sách các sản phẩm cần kiểm tra
 
-                console.log(productData)
-                if (productData) {
+            console.log(products)
+
+            // Duyệt qua từng sản phẩm trong danh sách
+            for (const product of products) {
+                // Tìm sản phẩm trong cơ sở dữ liệu
+                const foundProduct = await Product.findOne({
+                    _id: product.product, 'sizes': {
+                        $elemMatch: {
+                            size: product.size,
+                            countInStock: { $gte: product.amount }
+                        }
+                    }
+                });
+
+                // Kiểm tra xem sản phẩm có tồn kho đủ không
+                if (!foundProduct) {
+                    // Nếu không đủ tồn kho, thêm vào danh sách sản phẩm không đủ
+                    outOfStockProducts.push(product.name);
+                }
+            }
+
+            if (outOfStockProducts.length > 0) {
+                // Nếu có sản phẩm không đủ tồn kho, trả về thông báo lỗi
+                // return res.status(200).json({ success: false, message: 'Sản phẩm sau không đủ tồn kho: ' + outOfStockProducts.join(', ') });
+                resolve({
+                    status: 'ERR',
+                    message: 'Sản phẩm sau không đủ tồn kho: ' + outOfStockProducts.join(', ')
+                })
+            } else {
+                const promises = orderItems.map(async (order) => {
+                    const productData = await Product.findOneAndUpdate(
+                        {
+                            _id: order.product,
+                            'sizes': {
+                                $elemMatch: {
+                                    size: order.size,
+                                    countInStock: { $gte: order.amount }
+                                }
+                            }
+                        },
+                        {
+                            $inc: {
+                                'sizes.$.countInStock': -order.amount,
+                                selled: +order.amount
+                            }
+                        },
+                        { new: true }
+                    )
+
+                    // console.log(productData)
+                    if (productData) {
+                        return {
+                            status: 'OK',
+                            message: 'SUCCESS'
+                        }
+                    }
+                    else {
+                        return {
+                            status: 'OK',
+                            message: 'ERR',
+                            id: order.product
+                        }
+                    }
+                })
+                const promisesDelete = orderItems.map(async (order) => {
+                    await Card.deleteOne(
+                        {
+                            user: user,
+                            product: order.product,
+                            size: order.size
+                        }
+                    )
                     return {
                         status: 'OK',
                         message: 'SUCCESS'
                     }
-                }
-                else {
-                    return {
-                        status: 'OK',
-                        message: 'ERR',
-                        id: order.product
-                    }
-                }
-            })
-            const promisesDelete = orderItems.map(async (order) => {
-                await Card.deleteOne(
-                    {
-                        user: user,
-                        product: order.product,
-                        size: order.size
-                    }
-                )
-                return {
-                    status: 'OK',
-                    message: 'SUCCESS'
-                }
 
-            })
-            const results = await Promise.all(promises, promisesDelete)
-            const newData = results && results.filter((item) => item.id)
-            if (newData.length) {
-                const arrId = []
-                newData.forEach((item) => {
-                    arrId.push(item.id)
                 })
-                resolve({
-                    status: 'ERR',
-                    message: `Sản phẩm với id: ${arrId.join(',')} không đủ hàng`
-                })
-            } else {
-                const createdOrder = await Order.create({
-                    orderItems,
-                    shippingAddress: {
-                        fullName,
-                        address,
-                        city, phone, ward, district
-                    },
-                    paymentMethod,
-                    itemsPrice,
-                    shippingPrice,
-                    totalPrice,
-                    user: user,
-                    isPaid, paidAt, delivery
-                })
-                if (createdOrder) {
-                    // await sendEmailCreateOrder(email, orderItems, totalPrice)
-                    resolve({
-                        status: 'OK',
-                        message: 'success',
-                        data: createdOrder
+                const results = await Promise.all(promises, promisesDelete)
+                const newData = results && results.filter((item) => item.id)
+                if (newData.length) {
+                    const arrId = []
+                    newData.forEach((item) => {
+                        arrId.push(item.id)
                     })
+                    resolve({
+                        status: 'ERR',
+                        message: `Sản phẩm với id: ${arrId.join(',')} không đủ hàng`
+                    })
+                } else {
+                    if (id) {
+                        const userEmail = await User.findById(user)
+
+                        const createdOrder = await Order.create({
+                            _id: id,
+                            orderItems,
+                            shippingAddress: {
+                                fullName,
+                                address,
+                                city, phone, ward, district
+                            },
+                            paymentMethod,
+                            itemsPrice,
+                            shippingPrice,
+                            totalPrice,
+                            user: user,
+                            isPaid, paidAt, delivery
+                        })
+                        if (createdOrder) {
+                            await sendEmailCreateOrder(userEmail.email, orderItems, totalPrice)
+                            resolve({
+                                status: 'OK',
+                                message: 'success',
+                                data: createdOrder
+                            })
+                        }
+                    }
+                    else {
+                        const createdOrder = await Order.create({
+                            orderItems,
+                            shippingAddress: {
+                                fullName,
+                                address,
+                                city, phone, ward, district
+                            },
+                            paymentMethod,
+                            itemsPrice,
+                            shippingPrice,
+                            totalPrice,
+                            user: user,
+                            isPaid, paidAt, delivery
+                        })
+                        if (createdOrder) {
+                            await sendEmailCreateOrder(email, orderItems, totalPrice)
+                            resolve({
+                                status: 'OK',
+                                message: 'success',
+                                data: createdOrder
+                            })
+                        }
+                    }
                 }
             }
-            // resolve({
-            //     status: 'OK',
-            //     message: 'success',
-            // }
+
+
 
         } catch (e) {
             //   console.log('e', e)
@@ -343,7 +404,7 @@ const cancelOrderDetailsAdmin = (id, cancelReason) => {
                         { isCancel: true, cancelReason: cancelReason }, // Dữ liệu cập nhật
                         { new: true } // Tùy chọn để trả về bản ghi đã được cập nhật
                     );
-                    console.log(order)
+                    // console.log(order)
                     if (order === null) {
                         resolve({
                             status: 'ERR',

@@ -6,7 +6,6 @@ const Product = require('../models/ProductModel');
 // Controller function to get total revenue and orders
 const getTotalRevenueAndOrders = async (req, res) => {
     try {
-        console.log("hello")
         const totalRevenue = await Order.aggregate([
             {
                 $match: { isCancel: false, isPaid: true } // Filter out cancelled and unpaid orders
@@ -25,10 +24,10 @@ const getTotalRevenueAndOrders = async (req, res) => {
         const totalProducts = await Product.countDocuments(); // Count total products
         const totalOrders = await Order.countDocuments(); // Count total orders regardless of their status
 
-        console.log(totalRevenue[0].totalRevenue,
+        // console.log(totalRevenue[0].totalRevenue,
 
-            totalUsers,
-            totalProducts)
+        //     totalUsers,
+        //     totalProducts)
         res.status(200).json({
             totalRevenue: totalRevenue[0].totalRevenue,
             totalOrders: totalOrders,

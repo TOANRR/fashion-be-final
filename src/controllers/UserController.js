@@ -1,8 +1,10 @@
 const User = require('../models/UserModel')
+const ResetPassword = require('../models/ResetPasswordModel')
 const UserService = require('../services/UserService')
 const JwtService = require('../services/jwtService')
 const bcrypt = require("bcrypt")
-
+const crypto = require('crypto');
+const sendEmailResetPassword = require('../services/EmailService');
 const createUser = async (req, res) => {
     try {
         const { name, email, password, confirmPassword, phone } = req.body
@@ -41,12 +43,12 @@ const loginUser = async (req, res) => {
         if (!email || !password) {
             return res.status(200).json({
                 status: 'ERR',
-                message: 'The input is required'
+                message: 'Thiếu thông tin đăng nhập'
             })
         } else if (!isCheckEmail) {
             return res.status(200).json({
                 status: 'ERR',
-                message: 'The input is email'
+                message: 'Định dạng email không đúng'
             })
         }
         const response = await UserService.loginUser(req.body)
@@ -137,6 +139,7 @@ const refreshToken = async (req, res) => {
             })
         }
         const response = await JwtService.refreshTokenJwtService(token)
+        console.log(response)
         return res.status(200).json(response)
     } catch (e) {
         return res.status(404).json({
@@ -186,14 +189,14 @@ const getUserCountByDay = async (req, res) => {
     // console.log("hello1")
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
-        return res.status(400).json({ message: 'Start date and end date are required' });
+        return res.status(200).json({ success: false, message: 'Start date and end date are required' });
     }
 
     try {
         const start = new Date(startDate);
         const end = new Date(endDate);
         // console.log(start, end)
-
+        end.setDate(end.getDate() + 1);
         const userCountByDay = await User.aggregate([
             {
                 $match: {
@@ -218,7 +221,7 @@ const getUserCountByDay = async (req, res) => {
 
         res.status(200).json(userCountByDay);
     } catch (error) {
-        res.status(404).json({ message: 'Server error', error });
+        res.status(404).json({ success: false, message: 'Server error', error });
     }
 };
 const changePassword = async (req, res) => {
@@ -251,8 +254,83 @@ const changePassword = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error', error });
     }
 };
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        // Find user by email
+        const user = await User.findOne({ email });
 
+        if (!user) {
+            return res.status(200).json({ success: false, message: 'không tồn tại user' });
+        }
+
+        // Generate reset token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+
+        // Set expiry time for token (e.g., 1 hour)
+        const expiresAt = new Date();
+        expiresAt.setSeconds(expiresAt.getSeconds() + 3600);
+
+        // Save reset token to the database
+        await ResetPassword.create({
+            email: user.email,
+            token: resetToken,
+            expiresAt,
+        });
+
+        // Send reset password email
+        const emailResult = await sendEmailResetPassword.sendEmailResetPassword(email, resetToken);
+
+        if (!emailResult.success) {
+            return res.status(200).json({ success: false, message: emailResult.message });
+        }
+
+        return res.status(200).json({ success: true, message: 'Email đặt lại mật khẩu đã được gửi' });
+    } catch (error) {
+        console.error('Lỗi trong quá trình forgotPassword:', error);
+        return res.status(404).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        console.log("toke", token, newPassword)
+        // Tìm token đặt lại mật khẩu
+        const resetPasswordRecord = await ResetPassword.findOne({ token: token });
+
+        if (!resetPasswordRecord) {
+            return res.status(200).json({ success: false, message: 'Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn' });
+        }
+
+        // Kiểm tra token đã hết hạn chưa
+        if (resetPasswordRecord.expiresAt < new Date()) {
+            // Xóa token hết hạn khỏi cơ sở dữ liệu
+            console.log("token het han")
+            await ResetPassword.deleteOne({ _id: resetPasswordRecord._id });
+            return res.status(200).json({ success: false, message: 'Reset token đã hết hạn' });
+        }
+
+        // Tìm người dùng bằng email
+        const user = await User.findOne({ email: resetPasswordRecord.email });
+
+        if (!user) {
+            return res.status(200).json({ success: false, message: 'Không tồn tại user' });
+        }
+
+        // Cập nhật mật khẩu người dùng
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        // Xóa token đặt lại mật khẩu khỏi cơ sở dữ liệu
+        await ResetPassword.deleteOne({ _id: resetPasswordRecord._id });
+
+        return res.status(200).json({ success: true, message: 'Đặt lại mật khẩu thành công' });
+    } catch (error) {
+        console.error('Error in resetPassword:', error);
+        return res.status(200).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+};
 module.exports = {
     createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany, getTotalUsers,
-    getUserCountByDay, changePassword
+    getUserCountByDay, changePassword, forgotPassword, resetPassword
 }

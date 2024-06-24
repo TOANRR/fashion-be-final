@@ -6,8 +6,10 @@ const CardRouter = require('./CardRouter')
 const VnpayRouter = require('./VnpayRouter')
 const ReviewRouter = require('./ReviewRouter')
 const authRouter = require('./AuthGoogleRouter')
-const dashBoard = require('./DashBoardRouter')
-const chatbot = require('./ChatBotRouter')
+const dashBoardRouter = require('./DashBoardRouter')
+const chatbotRouter = require('./ChatBotRouter')
+const articleRouter = require('./ArticleRouter')
+const commentRouter = require('./CommentRouter.js')
 const routes = (app) => {
     app.use('/api/user', UserRouter),
         app.use('/api/product', ProductRouter),
@@ -17,8 +19,11 @@ const routes = (app) => {
         app.use('/api/vnpay', VnpayRouter),
         app.use('/api/review', ReviewRouter),
         app.use('/api/auth', authRouter),
-        app.use('/api/dashboard', dashBoard),
-        app.use('/api/chatbot', chatbot)
+        app.use('/api/dashboard', dashBoardRouter),
+        app.use('/api/chatbot', chatbotRouter),
+        app.use('/api/article', articleRouter),
+        app.use('/api/comment', commentRouter)
+
 
 }
 module.exports = routes

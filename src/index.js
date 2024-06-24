@@ -8,8 +8,23 @@ const cookieParser = require("cookie-parser");
 dotenv.config()
 require('./passport')
 const app = express()
+const fs = require('fs');
 
-console.log(`${process.env.MONGO_DB}`)
+// // // Hàm để tái tải lại biến môi trường từ file .env
+const reloadEnv = () => {
+    // Đọc lại nội dung của file .env
+    const envConfig = dotenv.parse(fs.readFileSync('.env'));
+
+    // Gán lại giá trị của các biến môi trường
+    for (const key in envConfig) {
+        process.env[key] = envConfig[key];
+    }
+};
+
+// // Sử dụng hàm reloadEnv để tái tải lại biến môi trường
+reloadEnv();
+// console.log(`${process.env.MONGO_DB}`)
+// console.log(process.env)
 const port = process.env.PORT || 3001
 app.get('/', (req, res) => {
     res.send('Hello world')
@@ -29,7 +44,7 @@ mongoose.connect(`${process.env.MONGO_DB}`)
     .catch((err) => {
         console.log(err)
     })
-console.log("client_id", process.env.CLIENT_ID)
+console.log("client_id", process.env.Flask_Server)
 app.listen(port, () => {
     console.log("server's port running:", + port)
 })

@@ -1,6 +1,20 @@
 const Order = require('../models/OrderModel');
 const OrderService = require('../services/OrderService')
+const { ObjectId } = require('mongodb');
 
+const getNewObjectId = (req, res) => {
+    try {
+        // Tạo một ObjectId mới
+        const newObjectId = new ObjectId();
+
+        // Trả về ObjectId mới trong phản hồi
+        res.status(200).json({ success: true, objectId: newObjectId });
+    } catch (error) {
+        // Xử lý lỗi nếu có
+        console.error('Error creating new ObjectId:', error);
+        res.status(404).json({ success: false, error: 'Internal server error' });
+    }
+};
 const createOrder = async (req, res) => {
     try {
         let shipping = false;
@@ -13,6 +27,7 @@ const createOrder = async (req, res) => {
                 message: 'The input is required'
             })
         }
+        console.log("tao orrderr")
         const response = await OrderService.createOrder(req.body)
         return res.status(200).json(response)
     } catch (e) {
@@ -230,9 +245,9 @@ const getRevenueInRange = async (req, res) => {
         // Convert startDate and endDate from strings to Date objects
         const start = new Date(startDate);
         const end = new Date(endDate);
-
+        end.setDate(end.getDate() + 1);
         // Log dates for debugging
-        console.log(`Start Date: ${start}, End Date: ${end}`);
+        // console.log(`Start Date: ${start}, End Date: ${end}`);
 
         // Query the database to get total revenue per day in the specified date range
         const revenueByDay = await Order.aggregate([
@@ -264,7 +279,7 @@ const getRevenueInRange = async (req, res) => {
         ]);
 
         // Log the result for debugging
-        console.log("Revenue by Day:", revenueByDay);
+        // console.log("Revenue by Day:", revenueByDay);
 
         // Send the result back to the client
         res.json(revenueByDay);
@@ -293,7 +308,7 @@ const searchOrdersByStatus = async (req, res) => {
                 orders = await Order.find({ user: userId, isPaid: true, isCancel: false }).sort({ createdAt: -1 });
                 break;
             case 'not_shipped':
-                orders = await Order.find({ user: userId, deliveryStatus: 'not_deliveredl', isCancel: false }).sort({ createdAt: -1 });
+                orders = await Order.find({ user: userId, deliveryStatus: 'not_delivered', isCancel: false }).sort({ createdAt: -1 });
                 break;
             case 'shipping':
                 orders = await Order.find({ user: userId, deliveryStatus: 'delivering', isCancel: false }).sort({ createdAt: -1 });
@@ -314,6 +329,25 @@ const searchOrdersByStatus = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
+const ratioCancelled = async (req, res) => {
+    try {
+        // Query database to get total number of orders
+        const totalOrdersCount = await Order.countDocuments();
+
+        // Query database to get cancelled orders count
+        const cancelledOrdersCount = await Order.countDocuments({ isCancel: true });
+
+        // Calculate cancellation ratio
+        const cancellationRatio = (cancelledOrdersCount / totalOrdersCount) * 100;
+
+        // Send data as JSON response
+        const roundedCancellationRatio = Math.round(cancellationRatio * 10) / 10;
+        res.json({ roundedCancellationRatio });
+    } catch (error) {
+        console.error('Error fetching cancellation ratio:', error);
+        res.status(404).json({ error: 'Internal server error' });
+    }
+};
 
 
 
@@ -329,6 +363,8 @@ module.exports = {
     getTotalRevenueAndOrders,
     getRevenueInRange,
     searchOrdersByStatus,
-    cancelOrderDetailsAdmin
+    cancelOrderDetailsAdmin,
+    ratioCancelled,
+    getNewObjectId
 
 }

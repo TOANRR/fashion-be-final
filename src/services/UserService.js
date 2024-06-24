@@ -1,3 +1,4 @@
+const Review = require("../models/ReviewModel")
 const User = require("../models/UserModel")
 const { genneralAccessToken, genneralRefreshToken } = require("./jwtService")
 const bcrypt = require("bcrypt")
@@ -109,12 +110,14 @@ const deleteUser = (id) => {
                 _id: id
             })
             if (checkUser === null) {
+
                 resolve({
                     status: 'ERR',
                     message: 'The user is not defined'
                 })
             }
-
+            const result = await Review.deleteMany({ user: id });
+            console.log(`${result.deletedCount} review(s) deleted.`);
             await User.findByIdAndDelete(id)
             resolve({
                 status: 'OK',

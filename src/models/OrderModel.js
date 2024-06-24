@@ -32,9 +32,11 @@ const orderSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
-    isDelivered: { type: Boolean, default: false },
+    deliveryStatus: { type: String, default: 'not_delivered' },
     deliveredAt: { type: Date },
     isCancel: { type: Boolean, default: false },
+    // cancelReason: { type: String }
+
 },
     {
         timestamps: true,

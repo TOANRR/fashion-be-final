@@ -45,6 +45,29 @@ const authUserMiddleWare = (req, res, next) => {
         }
     });
 }
+const authUser2MiddleWare = (req, res, next) => {
+    // console.log("token:", req.headers)
+    const token = req.headers.token.split(' ')[1]
+    //  console.log("token:",token)
+    const userId = req.params.id
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, user) {
+        if (err) {
+            return res.status(404).json({
+                message: 'The authemtication 1',
+                status: 'ERROR'
+            })
+        }
+        if (user?.id) {
+            next()
+        } else {
+            return res.status(404).json({
+                message: 'The authemtication',
+                status: 'ERROR'
+            })
+        }
+
+    });
+}
 module.exports = {
-    authMiddleWare, authUserMiddleWare
+    authMiddleWare, authUserMiddleWare, authUser2MiddleWare
 }

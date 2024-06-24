@@ -5,6 +5,8 @@ const ProductController = require('../controllers/ProductController');
 router.post('/create', ProductController.createProduct)
 router.put('/update/:id', authMiddleWare, ProductController.updateProduct)
 router.get('/get-details/:id', ProductController.getDetailsProduct)
+router.get('/get-details-admin/:id', ProductController.getDetailsProductAdmin)
+
 router.delete('/delete/:id', authMiddleWare, ProductController.deleteProduct)
 router.get('/get-all', ProductController.getAllProduct)
 router.post('/get-all-obj', ProductController.findManyByObj)
@@ -14,6 +16,7 @@ router.get('/types-categories', ProductController.getTypeCategories)
 router.post('/filter-product', ProductController.filterProduct)
 router.get('/product-type/:type', ProductController.getProductByType)
 router.get('/categories', ProductController.getCategories)
+router.post('/search-image', ProductController.searchImage)
 
 
 module.exports = router

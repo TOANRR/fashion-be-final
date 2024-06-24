@@ -207,7 +207,7 @@ router.post('/vnpay_ipn', async function (req, res, next) {
                         // await Order.findOneAndDelete({ _id: vnp_Params['vnp_TxnRef'], isPaid: false });
                         const order = await Order.findById(vnp_Params['vnp_TxnRef']);
                         if (order)
-                            await OrderService.cancelOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
+                            await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
 
                         res.status(200).json({ status: 'ERR', RspCode: '02', Message: 'This order has been updated to the payment status' })
                     }
@@ -215,7 +215,7 @@ router.post('/vnpay_ipn', async function (req, res, next) {
                 else {
                     const order = await Order.findById(vnp_Params['vnp_TxnRef']);
                     if (order)
-                        await OrderService.cancelOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
+                        await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
 
                     res.status(200).json({ status: 'ERR', RspCode: '02', Message: 'This order has been updated to the payment status' })
                 }
@@ -223,7 +223,7 @@ router.post('/vnpay_ipn', async function (req, res, next) {
             else {
                 const order = await Order.findById(vnp_Params['vnp_TxnRef']);
                 if (order)
-                    await OrderService.cancelOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
+                    await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
 
                 res.status(200).json({ status: 'ERR', RspCode: '04', Message: 'Amount invalid' })
             }
@@ -231,7 +231,7 @@ router.post('/vnpay_ipn', async function (req, res, next) {
         else {
             const order = await Order.findById(vnp_Params['vnp_TxnRef']);
             if (order)
-                await OrderService.cancelOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
+                await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
 
             res.status(200).json({ status: 'ERR', RspCode: '01', Message: 'Order not found' })
         }
@@ -240,135 +240,12 @@ router.post('/vnpay_ipn', async function (req, res, next) {
         const order = await Order.findById(vnp_Params['vnp_TxnRef']);
         console.log("log", order)
         if (order)
-            await OrderService.cancelOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
+            await OrderService.deleteOrderDetails(vnp_Params['vnp_TxnRef'], order.orderItems)
 
         res.status(200).json({ status: 'ERR', RspCode: '97', Message: 'Checksum failed' })
     }
 });
 
-// router.post('/querydr', function (req, res, next) {
-
-//     process.env.TZ = 'Asia/Ho_Chi_Minh';
-//     let date = new Date();
-
-//     let config = require('config');
-//     let crypto = require("crypto");
-
-//     let vnp_TmnCode = config.get('vnp_TmnCode');
-//     let secretKey = config.get('vnp_HashSecret');
-//     let vnp_Api = config.get('vnp_Api');
-
-//     let vnp_TxnRef = req.body.orderId;
-//     let vnp_TransactionDate = req.body.transDate;
-
-//     let vnp_RequestId = moment(date).format('HHmmss');
-//     let vnp_Version = '2.1.0';
-//     let vnp_Command = 'querydr';
-//     let vnp_OrderInfo = 'Truy van GD ma:' + vnp_TxnRef;
-
-//     let vnp_IpAddr = req.headers['x-forwarded-for'] ||
-//         req.connection.remoteAddress ||
-//         req.socket.remoteAddress ||
-//         req.connection.socket.remoteAddress;
-
-//     let currCode = 'VND';
-//     let vnp_CreateDate = moment(date).format('YYYYMMDDHHmmss');
-
-//     let data = vnp_RequestId + "|" + vnp_Version + "|" + vnp_Command + "|" + vnp_TmnCode + "|" + vnp_TxnRef + "|" + vnp_TransactionDate + "|" + vnp_CreateDate + "|" + vnp_IpAddr + "|" + vnp_OrderInfo;
-
-//     let hmac = crypto.createHmac("sha512", secretKey);
-//     let vnp_SecureHash = hmac.update(new Buffer(data, 'utf-8')).digest("hex");
-
-//     let dataObj = {
-//         'vnp_RequestId': vnp_RequestId,
-//         'vnp_Version': vnp_Version,
-//         'vnp_Command': vnp_Command,
-//         'vnp_TmnCode': vnp_TmnCode,
-//         'vnp_TxnRef': vnp_TxnRef,
-//         'vnp_OrderInfo': vnp_OrderInfo,
-//         'vnp_TransactionDate': vnp_TransactionDate,
-//         'vnp_CreateDate': vnp_CreateDate,
-//         'vnp_IpAddr': vnp_IpAddr,
-//         'vnp_SecureHash': vnp_SecureHash
-//     };
-//     // /merchant_webapi/api/transaction
-//     request({
-//         url: vnp_Api,
-//         method: "POST",
-//         json: true,
-//         body: dataObj
-//     }, function (error, response, body) {
-//         console.log(response);
-//     });
-
-// });
-
-// router.post('/refund', function (req, res, next) {
-
-//     process.env.TZ = 'Asia/Ho_Chi_Minh';
-//     let date = new Date();
-
-//     let config = require('config');
-//     let crypto = require("crypto");
-
-//     let vnp_TmnCode = config.get('vnp_TmnCode');
-//     let secretKey = config.get('vnp_HashSecret');
-//     let vnp_Api = config.get('vnp_Api');
-
-//     let vnp_TxnRef = req.body.orderId;
-//     let vnp_TransactionDate = req.body.transDate;
-//     let vnp_Amount = req.body.amount * 100;
-//     let vnp_TransactionType = req.body.transType;
-//     let vnp_CreateBy = req.body.user;
-
-//     let currCode = 'VND';
-
-//     let vnp_RequestId = moment(date).format('HHmmss');
-//     let vnp_Version = '2.1.0';
-//     let vnp_Command = 'refund';
-//     let vnp_OrderInfo = 'Hoan tien GD ma:' + vnp_TxnRef;
-
-//     let vnp_IpAddr = req.headers['x-forwarded-for'] ||
-//         req.connection.remoteAddress ||
-//         req.socket.remoteAddress ||
-//         req.connection.socket.remoteAddress;
-
-
-//     let vnp_CreateDate = moment(date).format('YYYYMMDDHHmmss');
-
-//     let vnp_TransactionNo = '0';
-
-//     let data = vnp_RequestId + "|" + vnp_Version + "|" + vnp_Command + "|" + vnp_TmnCode + "|" + vnp_TransactionType + "|" + vnp_TxnRef + "|" + vnp_Amount + "|" + vnp_TransactionNo + "|" + vnp_TransactionDate + "|" + vnp_CreateBy + "|" + vnp_CreateDate + "|" + vnp_IpAddr + "|" + vnp_OrderInfo;
-//     let hmac = crypto.createHmac("sha512", secretKey);
-//     let vnp_SecureHash = hmac.update(new Buffer(data, 'utf-8')).digest("hex");
-
-//     let dataObj = {
-//         'vnp_RequestId': vnp_RequestId,
-//         'vnp_Version': vnp_Version,
-//         'vnp_Command': vnp_Command,
-//         'vnp_TmnCode': vnp_TmnCode,
-//         'vnp_TransactionType': vnp_TransactionType,
-//         'vnp_TxnRef': vnp_TxnRef,
-//         'vnp_Amount': vnp_Amount,
-//         'vnp_TransactionNo': vnp_TransactionNo,
-//         'vnp_CreateBy': vnp_CreateBy,
-//         'vnp_OrderInfo': vnp_OrderInfo,
-//         'vnp_TransactionDate': vnp_TransactionDate,
-//         'vnp_CreateDate': vnp_CreateDate,
-//         'vnp_IpAddr': vnp_IpAddr,
-//         'vnp_SecureHash': vnp_SecureHash
-//     };
-
-//     request({
-//         url: vnp_Api,
-//         method: "POST",
-//         json: true,
-//         body: dataObj
-//     }, function (error, response, body) {
-//         console.log(response);
-//     });
-
-// });
 
 function sortObject(obj) {
     let sorted = {};

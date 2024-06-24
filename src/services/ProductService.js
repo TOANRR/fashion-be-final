@@ -1,5 +1,6 @@
 const Product = require("../models/ProductModel")
 const { ObjectId } = require('mongodb');
+const Review = require("../models/ReviewModel");
 
 const createProduct = (newProduct) => {
     return new Promise(async (resolve, reject) => {
@@ -103,24 +104,37 @@ const deleteManyProduct = (ids) => {
 const getDetailsProduct = (id) => {
     return new Promise(async (resolve, reject) => {
         try {
+            // Sử dụng aggregate để tính toán rating trung bình của các review cho sản phẩm cụ thể
+            // console.log("nice")
+            const ratingAggregate = await Review.aggregate([
+                { $match: { product: new ObjectId(id) } }, // Lọc các review cho sản phẩm cụ thể
+                { $group: { _id: null, averageRating: { $avg: "$rating" } } } // Tính toán rating trung bình
+            ]);
+            // console.log(ratingAggregate)
+            // Tìm kiếm thông tin sản phẩm qua productId và populate reviews
+            const product = await Product.findById(id);
 
-            const product = await Product.findOne({
-                _id: id
-            })
-            if (product === null) {
+            if (!product) {
                 resolve({
                     status: 'ERR',
-                    message: 'The product is not defined'
+                    message: 'Product not found'
                 })
+
             }
+
+            // Lấy ra rating trung bình từ kết quả aggregate
+            const averageRating = ratingAggregate.length > 0 ? ratingAggregate[0].averageRating : 0;
 
             resolve({
                 status: 'OK',
-                message: 'SUCESS',
-                data: product
+                message: 'Product found',
+                data: {
+                    product,
+                    averageRating // Thêm rating trung bình vào dữ liệu trả về
+                }
             })
-        } catch (e) {
-            reject(e)
+        } catch (error) {
+            reject(error)
         }
     })
 }
@@ -242,6 +256,31 @@ const findManyByObj = (limit, page, ids) => {
         // }
     })
 }
+const getDetailsProductAdmin = (id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log("here")
+            const product = await Product.findOne({
+                _id: id
+            })
+            if (product === null) {
+                resolve({
+                    status: 'ERR',
+                    message: 'The product is not defined'
+                })
+            }
+
+            resolve({
+                status: 'OK',
+                message: 'SUCESS',
+                data: product
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -250,5 +289,6 @@ module.exports = {
     getAllProduct,
     deleteManyProduct,
     getAllType,
-    findManyByObj
+    findManyByObj,
+    getDetailsProductAdmin
 }

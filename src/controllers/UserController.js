@@ -1,5 +1,8 @@
+const User = require('../models/UserModel')
 const UserService = require('../services/UserService')
 const JwtService = require('../services/jwtService')
+const bcrypt = require("bcrypt")
+
 const createUser = async (req, res) => {
     try {
         const { name, email, password, confirmPassword, phone } = req.body
@@ -179,6 +182,77 @@ const getTotalUsers = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+const getUserCountByDay = async (req, res) => {
+    // console.log("hello1")
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+        return res.status(400).json({ message: 'Start date and end date are required' });
+    }
+
+    try {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        // console.log(start, end)
+
+        const userCountByDay = await User.aggregate([
+            {
+                $match: {
+                    createdAt: {
+                        $gte: start,
+                        $lte: end
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Ho_Chi_Minh" }
+                    },
+                    count: { $sum: 1 }
+                }
+            },
+            {
+                $sort: { _id: 1 }
+            }
+        ]);
+
+        res.status(200).json(userCountByDay);
+    } catch (error) {
+        res.status(404).json({ message: 'Server error', error });
+    }
+};
+const changePassword = async (req, res) => {
+    let { currentPassword, newPassword } = req.body;
+    const userId = req.params.id
+
+    try {
+        const user = await User.findById(userId);
+        // console.log("user", user)
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        if (!user.password && !currentPassword) {
+            const hash = bcrypt.hashSync(newPassword, 10)
+            await User.updateOne({ _id: userId }, { $set: { password: hash } });
+            return res.status(200).json({ success: true, message: 'Password set successfully' });
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        }
+
+        const hash = bcrypt.hashSync(newPassword, 10)
+        console.log(hash)
+        await User.updateOne({ _id: userId }, { $set: { password: hash } });
+
+        res.status(200).json({ success: true, message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error', error });
+    }
+};
+
 module.exports = {
-    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany, getTotalUsers
+    createUser, loginUser, updateUser, deleteUser, getAllUser, getDetailsUser, refreshToken, logoutUser, deleteMany, getTotalUsers,
+    getUserCountByDay, changePassword
 }

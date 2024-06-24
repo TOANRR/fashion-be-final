@@ -1,6 +1,6 @@
 # Ứng dụng Node.js Express
 
-Kho lưu trữ này chứa một ứng dụng Node.js sử dụng framework Express. Nó cung cấp một cấu trúc cơ bản để xây dựng máy chủ web và bao gồm một số tính năng cần thiết để giúp bạn bắt đầu nhanh chóng.
+Kho lưu trữ này chứa một ứng dụng Node.js sử dụng framework Express. Nó cung cấp một cấu trúc cơ bản để xây dựng máy chủ web thời trang và bao gồm một số tính năng cần thiết để giúp bạn bắt đầu nhanh chóng. 
 
 ## Mục lục
 

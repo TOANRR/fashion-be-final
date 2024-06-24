@@ -22,6 +22,7 @@ Kho lưu trữ này chứa một ứng dụng Node.js sử dụng framework Expr
     ```sh
     npm install
     ```
+3. Tạo file .env tương tự
 
 ## Sử dụng
 

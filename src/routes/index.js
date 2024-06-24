@@ -11,5 +11,6 @@ const routes = (app) => {
         app.use('/api/payment', PaymentRouter),
         app.use('/api/card', CardRouter),
         app.use('/api/vnpay', VnpayRouter)
+
 }
 module.exports = routes
